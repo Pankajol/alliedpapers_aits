@@ -40,5 +40,18 @@ export async function GET() {
   }
 }
 
+// import dbConnect from "@/lib/db";
+// import Item from "@/models/ItemModels";
+
+export async function getStaticProps() {
+  await dbConnect();
+  const items = await Item.find().lean();
+
+  return {
+    props: { items: JSON.parse(JSON.stringify(items)) },
+  };
+}
+
+
 
 

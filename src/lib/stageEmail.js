@@ -20,7 +20,7 @@ const stageRecipients = {
   "SC to concerned sales & customer":  ["cp5553135@gmail.com"],
   "Material in QC-OK/NOK":             ["pritammore1001@gmail.com"],
   "Dispatch with qty":                 ["vaishali@aitsind.com"],
-  "Delivered to customer":             ["sonuyadav8594@gmail.com"],
+  "Delivered to customer":             ["javeriya@aitsind.com"],
 };
 
 /**
