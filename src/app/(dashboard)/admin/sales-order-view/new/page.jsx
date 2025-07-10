@@ -546,26 +546,7 @@ formData.rounding = rounding;
 }
 
 
-// ✅ Patch: fix file upload issue (remove manual content-type header)
-export const uploadOrderWithFiles = async (url, formData, attachments, token) => {
-  try {
-    const body = new FormData();
-    body.append("orderData", JSON.stringify(formData));
-    attachments.forEach((f) => body.append("newFiles", f));
 
-    const response = await axios.post(url, body, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': undefined, // 👈 important!
-      },
-    });
-
-    return response;
-  } catch (err) {
-    console.error("❌ File upload failed:", err);
-    throw err; // rethrow so the caller knows
-  }
-};
 
 
 
