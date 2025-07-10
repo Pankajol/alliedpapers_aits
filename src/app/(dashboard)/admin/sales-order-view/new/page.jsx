@@ -19,7 +19,7 @@ import CustomerSearch from "@/components/CustomerSearch";
 import CustomerAddressSelector from "@/components/CustomerAddressSelector";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import uploadOrderWithFiles from "@/lib/uploadOrderWithFiles"
+import {uploadOrderWithFiles} from "@/lib/uploadOrderWithFiles"
 
 // ------------------ Constants --------------------
 const initialOrderState = {
