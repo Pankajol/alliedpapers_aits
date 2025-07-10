@@ -40,17 +40,17 @@ const initialOrderState = {
       itemId: "",
       itemName: "",
       itemDescription: "",
-      quantity: 0,
+      quantity:"",
       allowedQuantity: 0,
       receivedQuantity: 0,
-      unitPrice: 0,
+      unitPrice: "",
       discount: 0,
       freight: 0,
       taxOption: "GST",
       priceAfterDiscount: 0,
       totalAmount: 0,
       gstAmount: 0,
-      gstRate: 0,
+      gstRate: "",
       cgstAmount: 0,
       sgstAmount: 0,
       igstAmount: 0,
@@ -196,7 +196,20 @@ useEffect(() => {
     const items = formData.items || [];
     const totalBefore = items.reduce((s, i) => s + (i.unitPrice * i.quantity - i.discount), 0);
     const gstTotal = items.reduce((s, i) => s + i.gstAmount, 0);
-    const grandTotal = totalBefore + gstTotal + formData.freight + formData.rounding;
+
+    // const grandTotal = ((((totalBefore) + (gstTotal)) + (formData.freight )) + (formData.rounding));
+  //   const grandTotal =
+  // (Number(totalBefore) || 0) +
+  // (Number(gstTotal) || 0) +
+  // (Number(formData.freight) || 0) +
+  // (Number(formData.rounding) || 0);
+
+  const unroundedTotal = totalBefore + gstTotal + formData.freight;
+const roundedTotal = Math.round(unroundedTotal);
+const  rounding = +(roundedTotal - unroundedTotal).toFixed(2);
+const grandTotal = roundedTotal;
+formData.rounding = rounding;
+
     const openBalance = grandTotal - (formData.totalDownPayment + formData.appliedAmounts);
     setFormData((p) => ({ ...p, totalBeforeDiscount: round(totalBefore), gstTotal: round(gstTotal), grandTotal: round(grandTotal), openBalance: round(openBalance) }));
   }, [formData.items, formData.freight, formData.rounding, formData.totalDownPayment, formData.appliedAmounts]);
@@ -439,7 +452,7 @@ useEffect(() => {
         <div>
           <label className="font-medium">Sales Stage</label>
           <select name="statusStages" value={formData.statusStages} onChange={handleChange} className={base} disabled={isReadOnly && !isAdmin}>
-            <option>ETD Padding</option><option>ETD Confirmation from plant</option><option>ETD notification for SC-cremika</option><option>SC to concerned sales & customer</option><option>Material in QC-OK/NOK</option><option>Dispatch with qty</option><option>Delivered to customer</option>
+            <option>ETD Pending</option><option>ETD Confirmation from plant</option><option>ETD notification for SC-cremika</option><option>SC to concerned sales & customer</option><option>Material in QC-OK/NOK</option><option>Dispatch with qty</option><option>Delivered to customer</option>
           </select>
         </div>
       </div>
@@ -455,7 +468,7 @@ useEffect(() => {
           ["Freight", "freight", false],
           ["Rounding", "rounding", false],
           ["Grand Total", "grandTotal", true],
-          ["Open Balance", "openBalance", true],
+          // ["Open Balance", "openBalance", true],
         ].map(([label, key, readOnly]) => (
           <div key={key}>
             <label>{label}</label>

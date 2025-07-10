@@ -7,7 +7,7 @@ import { Readable } from "stream";
 import dbConnect from "@/lib/db";
 import SalesOrder from "@/models/SalesOrder";
 import { getTokenFromHeader, verifyJWT } from "@/lib/auth";
-import { sendStageChangeEmail } from "@/lib/stageEmail";   // ⬅️ new
+import { sendStageChangeEmail } from "@/lib/stageEmail";
 
 // ─── Next.js App‑router config ──────────────────────────────────────────────
 export const config = { api: { bodyParser: false } };
@@ -20,7 +20,6 @@ function isAuthorized(user) {
   return user.permissions?.includes("sales");
 }
 
-/* Turn the Web Request into a minimal Node IncomingMessage for formidable */
 async function toNodeReq(request) {
   const buf = Buffer.from(await request.arrayBuffer());
   const nodeReq = new Readable({
@@ -30,21 +29,22 @@ async function toNodeReq(request) {
     },
   });
   nodeReq.headers = Object.fromEntries(request.headers.entries());
-  nodeReq.method  = request.method;
-  nodeReq.url     = request.url || "/";
+  nodeReq.method = request.method;
+  nodeReq.url = request.url || "/";
   return nodeReq;
 }
 
-/* Parse multipart/form‑data */
 async function parseMultipart(request) {
   const nodeReq = await toNodeReq(request);
   const form = formidable({ multiples: true, keepExtensions: true });
   return await new Promise((res, rej) =>
-    form.parse(nodeReq, (err, fields, files) => (err ? rej(err) : res({ fields, files })))
+    form.parse(nodeReq, (err, fields, files) =>
+      err ? rej(err) : res({ fields, files })
+    )
   );
 }
 
-/* ─────────────────────────────  GET  ────────────────────────────────────── */
+// ─── GET Handler ────────────────────────────────────────────────────────────
 export async function GET(req, { params }) {
   try {
     await dbConnect();
@@ -62,23 +62,20 @@ export async function GET(req, { params }) {
   }
 }
 
-/* ─────────────────────────────  PUT  ────────────────────────────────────── */
+// ─── PUT Handler ────────────────────────────────────────────────────────────
 export async function PUT(req, { params }) {
   try {
     await dbConnect();
     const { id } = await params;
 
-    // 1) Auth
     const user = await verifyJWT(getTokenFromHeader(req));
     if (!user || !isAuthorized(user))
       return NextResponse.json({ message: "Forbidden" }, { status: 401 });
 
-    // 2) Current order (for stage‑change comparison)
     const current = await SalesOrder.findById(id);
     if (!current)
       return NextResponse.json({ message: "Sales Order not found" }, { status: 404 });
 
-    // 3) Parse body
     const cType = req.headers.get("content-type") || "";
     let body = {};
     let newFiles = [];
@@ -97,22 +94,19 @@ export async function PUT(req, { params }) {
       body = await req.json();
     }
 
-    // 4) Limited role: can update only status + stage
     const limited = user.role === "Sales Manager" && user.type !== "company";
     if (limited) body = { status: body.status, statusStages: body.statusStages };
 
-    // 5) Remove nested _id fields
     if (body.billingAddress && typeof body.billingAddress === "object")
       delete body.billingAddress._id;
     if (body.shippingAddress && typeof body.shippingAddress === "object")
       delete body.shippingAddress._id;
 
-    // 6) Build safe updateDoc (no $set on attachments)
     const { attachments: _omit, ...scalar } = body;
     const updateDoc = { $set: scalar };
 
     if (!limited) {
-      // Pull removed
+      // Removed files
       if (removedFiles.length) {
         updateDoc.$pull = {
           attachments: { fileUrl: { $in: removedFiles.map((f) => f.fileUrl) } },
@@ -120,30 +114,43 @@ export async function PUT(req, { params }) {
         await Promise.all(
           removedFiles.map(async (f) => {
             const p = path.join(process.cwd(), "public", f.fileUrl);
-            try { await fs.unlink(p); } catch {}
+            try {
+              await fs.unlink(p);
+            } catch {}
           })
         );
       }
 
-      // Push new
+      // Add new files — with extension handling
       if (newFiles.length) {
-        const uploads = newFiles.map((f) => ({
-          fileName: f.originalFilename,
-          fileUrl: `/uploads/${path.basename(f.filepath)}`,
-          fileType: f.mimetype,
-          uploadedAt: new Date(),
-        }));
+        const uploadDir = path.join(process.cwd(), "public/uploads");
+        await fs.mkdir(uploadDir, { recursive: true });
+
+        const uploads = await Promise.all(
+          newFiles.map(async (f) => {
+            const ext = path.extname(f.originalFilename);
+            const newName = `${path.basename(f.filepath)}${ext}`;
+            const newPath = path.join(uploadDir, newName);
+            await fs.rename(f.filepath, newPath);
+
+            return {
+              fileName: f.originalFilename,
+              fileUrl: `/uploads/${newName}`,
+              fileType: f.mimetype,
+              uploadedAt: new Date(),
+            };
+          })
+        );
+
         updateDoc.$push = { attachments: { $each: uploads } };
       }
     }
 
-    // 7) Update
     const updated = await SalesOrder.findByIdAndUpdate(id, updateDoc, {
       new: true,
       runValidators: true,
     });
 
-    // 8) Stage‑change email (after successful save)
     await sendStageChangeEmail(updated, current.statusStages);
 
     return NextResponse.json(
@@ -159,7 +166,7 @@ export async function PUT(req, { params }) {
   }
 }
 
-/* ─────────────────────────────  DELETE  ─────────────────────────────────── */
+// ─── DELETE Handler ─────────────────────────────────────────────────────────
 export async function DELETE(req, { params }) {
   try {
     await dbConnect();
@@ -172,11 +179,12 @@ export async function DELETE(req, { params }) {
     if (!order)
       return NextResponse.json({ message: "Sales Order not found" }, { status: 404 });
 
-    // Remove physical files
     await Promise.all(
       order.attachments.map(async (att) => {
         const p = path.join(process.cwd(), "public", att.fileUrl);
-        try { await fs.unlink(p); } catch {}
+        try {
+          await fs.unlink(p);
+        } catch {}
       })
     );
 
@@ -195,63 +203,63 @@ export async function DELETE(req, { params }) {
 
 
 
+
+
 // import { NextResponse } from "next/server";
 // import path from "path";
 // import fs from "fs/promises";
+// import formidable from "formidable";
+// import { Readable } from "stream";
+
 // import dbConnect from "@/lib/db";
 // import SalesOrder from "@/models/SalesOrder";
 // import { getTokenFromHeader, verifyJWT } from "@/lib/auth";
-// import { parseForm } from "@/lib/formParser";
-// import formidable from "formidable";
-// import { Readable } from "stream";
-// import { sendStageChangeEmail } from "@/lib/stageEmail";
+// import { sendStageChangeEmail } from "@/lib/stageEmail";   // ⬅️ new
 
+// // ─── Next.js App‑router config ──────────────────────────────────────────────
 // export const config = { api: { bodyParser: false } };
 
+// // ─── helpers ────────────────────────────────────────────────────────────────
 // function isAuthorized(user) {
 //   if (user.type === "company") return true;
 //   if (user.role === "Admin") return true;
-//   if (user.role === "Sales Manager") return true; // limited edit
+//   if (user.role === "Sales Manager") return true; // limited
 //   return user.permissions?.includes("sales");
 // }
 
-// /* ------------------------------------------------------------------
-//    Helpers to parse multipart/form-data in the App Router environment
-// -------------------------------------------------------------------*/
-// async function toIncomingMessage(request) {
+// /* Turn the Web Request into a minimal Node IncomingMessage for formidable */
+// async function toNodeReq(request) {
 //   const buf = Buffer.from(await request.arrayBuffer());
-//   const stream = new Readable({
+//   const nodeReq = new Readable({
 //     read() {
 //       this.push(buf);
 //       this.push(null);
 //     },
 //   });
-//   stream.headers = Object.fromEntries(request.headers.entries());
-//   stream.method = request.method;
-//   stream.url = request.url || "/";
-//   return stream;
+//   nodeReq.headers = Object.fromEntries(request.headers.entries());
+//   nodeReq.method  = request.method;
+//   nodeReq.url     = request.url || "/";
+//   return nodeReq;
 // }
 
+// /* Parse multipart/form‑data */
 // async function parseMultipart(request) {
-//   const nodeReq = await toIncomingMessage(request);
+//   const nodeReq = await toNodeReq(request);
 //   const form = formidable({ multiples: true, keepExtensions: true });
-//   return await new Promise((res, rej) => {
-//     form.parse(nodeReq, (err, fields, files) => {
-//       if (err) return rej(err);
-//       res({ fields, files });
-//     });
-//   });
+//   return await new Promise((res, rej) =>
+//     form.parse(nodeReq, (err, fields, files) => (err ? rej(err) : res({ fields, files })))
+//   );
 // }
 
-// /* ------------------------------  GET  ------------------------------ */
+// /* ─────────────────────────────  GET  ────────────────────────────────────── */
 // export async function GET(req, { params }) {
 //   try {
 //     await dbConnect();
-//     const { id } = params;
+//     const { id } = await params;
 //     const order = await SalesOrder.findById(id);
 //     if (!order)
 //       return NextResponse.json({ message: "Sales Order not found" }, { status: 404 });
-//     return NextResponse.json({ success: true, data: order }, { status: 200 });
+//     return NextResponse.json({ success: true, data: order });
 //   } catch (err) {
 //     console.error("GET error:", err);
 //     return NextResponse.json(
@@ -261,27 +269,31 @@ export async function DELETE(req, { params }) {
 //   }
 // }
 
-// /* ------------------------------  PUT  ------------------------------ */
-// export async function PUT(request, { params }) {
+// /* ─────────────────────────────  PUT  ────────────────────────────────────── */
+// export async function PUT(req, { params }) {
 //   try {
 //     await dbConnect();
-//     const { id } = params;
+//     const { id } = await params;
 
-//     // Auth -----------------------------------------------------------
-//     const token = getTokenFromHeader(request);
-//     const user = await verifyJWT(token);
+//     // 1) Auth
+//     const user = await verifyJWT(getTokenFromHeader(req));
 //     if (!user || !isAuthorized(user))
 //       return NextResponse.json({ message: "Forbidden" }, { status: 401 });
 
-//     // Parse body -----------------------------------------------------
-//     const cType = request.headers.get("content-type") || "";
-//     let data = {};
+//     // 2) Current order (for stage‑change comparison)
+//     const current = await SalesOrder.findById(id);
+//     if (!current)
+//       return NextResponse.json({ message: "Sales Order not found" }, { status: 404 });
+
+//     // 3) Parse body
+//     const cType = req.headers.get("content-type") || "";
+//     let body = {};
 //     let newFiles = [];
 //     let removedFiles = [];
 
 //     if (cType.includes("multipart/form-data")) {
-//       const { fields, files } = await parseMultipart(request);
-//       data = JSON.parse(fields.orderData || "{}");
+//       const { fields, files } = await parseMultipart(req);
+//       body = JSON.parse(fields.orderData || "{}");
 //       removedFiles = JSON.parse(fields.removedFiles || "[]");
 //       newFiles = Array.isArray(files.newFiles)
 //         ? files.newFiles
@@ -289,25 +301,25 @@ export async function DELETE(req, { params }) {
 //         ? [files.newFiles]
 //         : [];
 //     } else {
-//       data = await request.json();
+//       body = await req.json();
 //     }
 
-//     // Limited role → only status & stage ----------------------------
+//     // 4) Limited role: can update only status + stage
 //     const limited = user.role === "Sales Manager" && user.type !== "company";
-//     if (limited) {
-//       data = { status: data.status, statusStages: data.statusStages };
-//     }
+//     if (limited) body = { status: body.status, statusStages: body.statusStages };
 
-//     // Clean nested _id ---------------------------------------------
-//     if (data.billingAddress && typeof data.billingAddress === "object") delete data.billingAddress._id;
-//     if (data.shippingAddress && typeof data.shippingAddress === "object") delete data.shippingAddress._id;
+//     // 5) Remove nested _id fields
+//     if (body.billingAddress && typeof body.billingAddress === "object")
+//       delete body.billingAddress._id;
+//     if (body.shippingAddress && typeof body.shippingAddress === "object")
+//       delete body.shippingAddress._id;
 
-//     // Build updateDoc without $set on attachments -------------------
-//     const { attachments: _ignored, ...scalar } = data;
+//     // 6) Build safe updateDoc (no $set on attachments)
+//     const { attachments: _omit, ...scalar } = body;
 //     const updateDoc = { $set: scalar };
 
 //     if (!limited) {
-//       // removed files (physical + db pull)
+//       // Pull removed
 //       if (removedFiles.length) {
 //         updateDoc.$pull = {
 //           attachments: { fileUrl: { $in: removedFiles.map((f) => f.fileUrl) } },
@@ -319,7 +331,8 @@ export async function DELETE(req, { params }) {
 //           })
 //         );
 //       }
-//       // new uploads → push
+
+//       // Push new
 //       if (newFiles.length) {
 //         const uploads = newFiles.map((f) => ({
 //           fileName: f.originalFilename,
@@ -331,16 +344,17 @@ export async function DELETE(req, { params }) {
 //       }
 //     }
 
+//     // 7) Update
 //     const updated = await SalesOrder.findByIdAndUpdate(id, updateDoc, {
 //       new: true,
 //       runValidators: true,
 //     });
 
-//     if (!updated)
-//       return NextResponse.json({ message: "Sales Order not found" }, { status: 404 });
+//     // 8) Stage‑change email (after successful save)
+//     await sendStageChangeEmail(updated, current.statusStages);
 
 //     return NextResponse.json(
-//       { message: "Sales Order updated successfully", data: updated },
+//       { message: "Sales Order updated", data: updated },
 //       { status: 200 }
 //     );
 //   } catch (err) {
@@ -352,14 +366,12 @@ export async function DELETE(req, { params }) {
 //   }
 // }
 
-// /* ------------------------------  DELETE  ------------------------------ */
-// export async function DELETE(request, { params }) {
+// /* ─────────────────────────────  DELETE  ─────────────────────────────────── */
+// export async function DELETE(req, { params }) {
 //   try {
 //     await dbConnect();
-//     const { id } = params;
-
-//     const token = getTokenFromHeader(request);
-//     const user = await verifyJWT(token);
+//     const { id } = await params;
+//     const user = await verifyJWT(getTokenFromHeader(req));
 //     if (!user || (user.role !== "Admin" && user.type !== "company"))
 //       return NextResponse.json({ message: "Forbidden" }, { status: 401 });
 
@@ -367,15 +379,13 @@ export async function DELETE(req, { params }) {
 //     if (!order)
 //       return NextResponse.json({ message: "Sales Order not found" }, { status: 404 });
 
-//     // remove physical files
-//     if (order.attachments?.length) {
-//       await Promise.all(
-//         order.attachments.map(async (att) => {
-//           const p = path.join(process.cwd(), "public", att.fileUrl);
-//           try { await fs.unlink(p); } catch {}
-//         })
-//       );
-//     }
+//     // Remove physical files
+//     await Promise.all(
+//       order.attachments.map(async (att) => {
+//         const p = path.join(process.cwd(), "public", att.fileUrl);
+//         try { await fs.unlink(p); } catch {}
+//       })
+//     );
 
 //     return NextResponse.json({ message: "Sales Order deleted" }, { status: 200 });
 //   } catch (err) {
@@ -386,4 +396,6 @@ export async function DELETE(req, { params }) {
 //     );
 //   }
 // }
+
+
 

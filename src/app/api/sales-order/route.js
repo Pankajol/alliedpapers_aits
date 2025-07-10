@@ -10,7 +10,7 @@ import { parseForm } from '@/lib/formParser';
 
 export const config = {
   api: {
-    bodyParser: false, // needed for formidable
+    bodyParser: false, // Required for file upload parsing
   },
 };
 
@@ -26,122 +26,80 @@ export async function POST(req) {
   await dbConnect();
 
   try {
-    // 1. Auth
+    // 1. Authentication
     const token = getTokenFromHeader(req);
     const user = await verifyJWT(token);
     if (!user || !isAuthorized(user)) throw new Error("Forbidden");
 
-    // 2. Parse form (with JSON + files)
+    // 2. Parse multipart form (JSON + files)
     const { fields, files } = await parseForm(req);
 
-    // 3. Parse JSON body (orderData)
+    // 3. Parse JSON body (order data)
     const orderData = JSON.parse(fields.orderData);
 
+    // 4. Cleanup IDs
     delete orderData._id;
     orderData.items?.forEach(i => delete i._id);
     delete orderData.billingAddress?._id;
     delete orderData.shippingAddress?._id;
 
-    // 4. Inject metadata
+    // 5. Add metadata
     orderData.companyId = user.companyId;
     if (user.type === "user") orderData.createdBy = user.id;
 
-    // 5. Add uploaded files
+    // 6. Save uploaded files correctly with extension
     const fileArray = Array.isArray(files.attachments) ? files.attachments : [files.attachments];
-    orderData.attachments = fileArray
-      .filter(Boolean)
-      .map(file => ({
-        fileName: file.originalFilename,
-        fileUrl: `/uploads/${path.basename(file.filepath)}`,
-        fileType: file.mimetype,
-        uploadedAt: new Date(),
-      }));
+    const uploadDir = path.join(process.cwd(), "public/uploads");
+    await fs.promises.mkdir(uploadDir, { recursive: true });
 
-    // 6. Save order
-    const order = await SalesOrder.create(orderData);
+    orderData.attachments = await Promise.all(
+      fileArray
+        .filter(Boolean)
+        .map(async (file) => {
+          const originalExt = path.extname(file.originalFilename); // .png, .pdf etc.
+          const uniqueName = `${path.basename(file.filepath)}${originalExt}`;
+          const newPath = path.join(uploadDir, uniqueName);
 
-    // 7. Email confirmation
-    await sendSalesOrderEmail(
-      ["aniketgaikwad7224@gmail.com", "9to5withnikhil@gmail.com", "cp5553135@gmail.com", "pritammore1001@gmail.com"],
-      order
+          await fs.promises.rename(file.filepath, newPath);
+
+          return {
+            fileName: file.originalFilename,
+            fileUrl: `/uploads/${uniqueName}`,
+            fileType: file.mimetype,
+            uploadedAt: new Date(),
+          };
+        })
     );
 
+    // 7. Create sales order in DB
+    const order = await SalesOrder.create(orderData);
+
+    // 8. Send email
+    // await sendSalesOrderEmail(
+    //   [
+    //     "aniketgaikwad7224@gmail.com",
+    //     "9to5withnikhil@gmail.com",
+    //     "cp5553135@gmail.com",
+    //     "pritammore1001@gmail.com"
+    //   ],
+    //   order
+    // );
+
+    // 9. Return response
     return NextResponse.json(
       { success: true, message: "Sales order created", orderId: order._id },
       { status: 201 }
     );
+
   } catch (err) {
-    return NextResponse.json({ success: false, message: err.message }, {
-      status: /Forbidden|Unauthorized/.test(err.message) ? 401 : 500
-    });
+    console.error("POST /api/sales-order error:", err);
+    return NextResponse.json(
+      { success: false, message: err.message },
+      { status: /Forbidden|Unauthorized/.test(err.message) ? 401 : 500 }
+    );
   }
 }
 
-
-
-// // app/api/sales-orders/route.js
-// import { NextResponse } from 'next/server';
-// import mongoose from 'mongoose';
-// import dbConnect from '@/lib/db';
-// import SalesOrder from '@/models/SalesOrder';
-// import Inventory from '@/models/Inventory';
-// import StockMovement from '@/models/StockMovement';
-// import { getTokenFromHeader, verifyJWT } from '@/lib/auth';
-// import { sendSalesOrderEmail } from "@/lib/mailer";
-
-// const { Types } = mongoose;
-
-// /* -------------------------------------------------
-//    Helper: only company token OR user w/ "sales" perm
-// -------------------------------------------------- */
-// // function isAuthorized(user) {
-// //   return user.type === 'company' || user.permissions?.includes('sales');
-// // }
-// function isAuthorized(user) {
-//   if (user.type === 'company') return true;
-//   if (user.role === 'Sales Manager' || user.role === 'Admin') return true;
-//   return user.permissions?.includes('sales');
-// }
-
-// /* =================================================
-//    POST  /api/sales-orders   (create + reserve stock)
-// =================================================== */
-// export async function POST(req) {
-//   await dbConnect();
-
-//   try {
-//     const token = getTokenFromHeader(req);
-//     const user  = await verifyJWT(token);
-//     if (!user || !isAuthorized(user)) throw new Error("Forbidden");
-
-//     const orderData = await req.json();
-//     ["_id", "billingAddress?._id", "shippingAddress?._id"].forEach(k => delete orderData[k]);
-//     orderData.items?.forEach(i => delete i._id);
-
-//     orderData.companyId = user.companyId;
-//     if (user.type === "user") orderData.createdBy = user.id;
-
-//     const order = await SalesOrder.create(orderData);
-
-//     await sendSalesOrderEmail(
-//       ["aniketgaikwad7224@gmail.com","9to5withnikhil@gmail.com","cp5553135@gmail.com","pritammore1001@gmail.com"],
-//       order
-//     );
-
-//     return NextResponse.json(
-//       { success: true, message: "Sales order created", orderId: order._id },
-//       { status: 201 }
-//     );
-//   } catch (err) {
-//     const code = /Forbidden|Unauthorized/.test(err.message) ? 401 : 500;
-//     return NextResponse.json({ success: false, message: err.message }, { status: code });
-//   }
-// }
-
-
-/* =================================================
-   GET  /api/sales-orders   (list orders by company)
-=================================================== */
 export async function GET(req) {
   await dbConnect();
 

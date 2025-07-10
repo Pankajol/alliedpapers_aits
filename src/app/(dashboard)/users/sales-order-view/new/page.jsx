@@ -40,17 +40,17 @@ const initialOrderState = {
       itemId: "",
       itemName: "",
       itemDescription: "",
-      quantity: 0,
+      quantity: "",
       allowedQuantity: 0,
       receivedQuantity: 0,
-      unitPrice: 0,
+      unitPrice: "",
       discount: 0,
       freight: 0,
       taxOption: "GST",
       priceAfterDiscount: 0,
       totalAmount: 0,
       gstAmount: 0,
-      gstRate: 0,
+      gstRate: "",
       cgstAmount: 0,
       sgstAmount: 0,
       igstAmount: 0,
@@ -201,7 +201,14 @@ function SalesOrderForm() {
     const items = formData.items || [];
     const totalBefore = items.reduce((s, i) => s + (i.unitPrice * i.quantity - i.discount), 0);
     const gstTotal = items.reduce((s, i) => s + i.gstAmount, 0);
-    const grandTotal = totalBefore + gstTotal + formData.freight + formData.rounding;
+    // const grandTotal = totalBefore + gstTotal + formData.freight + formData.rounding;
+
+      const unroundedTotal = totalBefore + gstTotal + formData.freight;
+const roundedTotal = Math.round(unroundedTotal);
+const  rounding = +(roundedTotal - unroundedTotal).toFixed(2);
+const grandTotal = roundedTotal;
+formData.rounding = rounding;
+
     const openBalance = grandTotal - (formData.totalDownPayment + formData.appliedAmounts);
     setFormData((p) => ({ ...p, totalBeforeDiscount: round(totalBefore), gstTotal: round(gstTotal), grandTotal: round(grandTotal), openBalance: round(openBalance) }));
   }, [formData.items, formData.freight, formData.rounding, formData.totalDownPayment, formData.appliedAmounts]);
@@ -396,13 +403,13 @@ function SalesOrderForm() {
           <label className="font-medium block">Billing Address</label>
           {customBilling && !isReadOnly ? (
             <>
-              <textarea name="billingAddress" value={formData.billingAddress || ""} onChange={handleChange} rows={3} className={base} />
+              <textarea name="billingAddress" value={formData.billingAddress || ""} onChange={handleChange} rows={3} readOnly={isReadOnly} className={isReadOnly ? ro : base} />
               <button className="text-blue-600 text-sm" onClick={() => { setCustomBilling(false); setFormData((p) => ({ ...p, billingAddress: null })); }}>⬅︎ Select saved</button>
             </>
           ) : (
             <>
               {/* <CustomerAddressSelector disabled={isReadOnly} customer={selectedCustomer} selectedBillingAddress={formData.billingAddress} selectedShippingAddress={formData.shippingAddress} onBillingAddressSelect={(addr) => setFormData((p) => ({ ...p, billingAddress: addr }))} onShippingAddressSelect={(addr) => setFormData((p) => ({ ...p, shippingAddress: addr }))} /> */}
-               <textarea name="billingAddress" value={formData.billingAddress.address1 || ""} onChange={handleChange} rows={3} className={base} />
+               <textarea name="billingAddress" value={formData.billingAddress.address1 || ""} onChange={handleChange} rows={3}  readOnly={isReadOnly}  className={isReadOnly ? ro : base} />
               {!isReadOnly && <button className="text-blue-600 text-sm" onClick={() => { setCustomBilling(true); setFormData((p) => ({ ...p, billingAddress: "" })); }}>+ Enter billing address</button>}
             </>
           )}
@@ -412,13 +419,13 @@ function SalesOrderForm() {
           <label className="font-medium block">Shipping Address</label>
           {customShipping && !isReadOnly ? (
             <>
-              <textarea name="shippingAddress" value={formData.shippingAddress || ""} onChange={handleChange} rows={3} className={base} />
+              <textarea name="shippingAddress" value={formData.shippingAddress || ""} onChange={handleChange} rows={3} readOnly={isReadOnly} className={isReadOnly ? ro : base} />
               <button className="text-blue-600 text-sm" onClick={() => { setCustomShipping(false); setFormData((p) => ({ ...p, shippingAddress: null })); }}>⬅︎ Select saved</button>
             </>
           ) : (
             <>
               {/* <CustomerAddressSelector disabled={isReadOnly} customer={selectedCustomer} selectedBillingAddress={formData.billingAddress} selectedShippingAddress={formData.shippingAddress} onBillingAddressSelect={(addr) => setFormData((p) => ({ ...p, billingAddress: addr }))} onShippingAddressSelect={(addr) => setFormData((p) => ({ ...p, shippingAddress: addr }))} /> */}
-                 <textarea name="shippingAddress" value={formData.shippingAddress.address1 || ""} onChange={handleChange} rows={3} className={base} />
+                 <textarea name="shippingAddress" value={formData.shippingAddress.address1 || ""} onChange={handleChange} rows={3} readOnly={isReadOnly} className={isReadOnly ? ro : base} />
               {!isReadOnly && <button className="text-blue-600 text-sm" onClick={() => { setCustomShipping(true); setFormData((p) => ({ ...p, shippingAddress: "" })); }}>+ Enter shipping address</button>}
             </>
           )}
@@ -444,7 +451,7 @@ function SalesOrderForm() {
         <div>
           <label className="font-medium">Sales Stage</label>
           <select name="statusStages" value={formData.statusStages} onChange={handleChange} className={base}  disabled={isReadOnly && !canEditStageOnly }>
-           <option>ETD Pandding</option> <option>ETD Confirmation from plant</option><option>ETD notification for SC-cremika</option><option>SC to concerned sales & customer</option><option>Material in QC-OK/NOK</option><option>Dispatch with qty</option><option>Delivered to customer</option>
+           <option>ETD Pending</option> <option>ETD Confirmation from plant</option><option>ETD notification for SC-cremika</option><option>SC to concerned sales & customer</option><option>Material in QC-OK/NOK</option><option>Dispatch with qty</option><option>Delivered to customer</option>
           </select>
         </div>
       </div>
@@ -460,7 +467,7 @@ function SalesOrderForm() {
           ["Freight", "freight", false],
           ["Rounding", "rounding", false],
           ["Grand Total", "grandTotal", true],
-          ["Open Balance", "openBalance", true],
+          // ["Open Balance", "openBalance", true],
         ].map(([label, key, readOnly]) => (
           <div key={key}>
             <label>{label}</label>

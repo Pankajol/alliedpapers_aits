@@ -41,7 +41,7 @@ const Item = ({ href, icon, label, close }) => (
   <Link
     href={href}
     onClick={close}
-    className="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-600"
+    className="flex items-center gap-15 px-4 py-2 rounded hover:bg-gray-600"
   >
     {icon} {label}
   </Link>
@@ -289,19 +289,19 @@ export default function Sidebar({ children }) {
                       />
                       {open.sub === 'sales' && (
                         <div className="ml-4 mt-1 space-y-1">
-                          <Item
+                          {/* <Item
                             href={P('/sales-quotation-view')}
                             icon={<HiChevronDown />}
                             label="Quotation View"
                             close={closeDrawer}
-                          />
+                          /> */}
                           <Item
                             href={P('/sales-order-view')}
-                            icon={<HiChevronRight />}
+                            icon={<HiReceiptTax />}
                             label="Order View"
                             close={closeDrawer}
                           />
-                          <Item
+                          {/* <Item
                             href={P('/delivery-view')}
                             icon={<HiOutlineCube />}
                             label="Delivery View"
@@ -319,7 +319,7 @@ export default function Sidebar({ children }) {
                             icon={<HiReceiptTax />}
                             label="Credit Memo View"
                             close={closeDrawer}
-                          />
+                          /> */}
                           <Item
                             href={P('/sales-report')}
                             icon={<HiChartSquareBar />}
@@ -512,7 +512,7 @@ export default function Sidebar({ children }) {
       </aside>
 
       {/* content */}
-      <main className="flex-1 pt-14 md:pt-0 md:ml-64 p-4">{children}</main>
+      <main className="flex-1">{children}</main>
     </div>
   );
 }

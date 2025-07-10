@@ -14,7 +14,7 @@ const transporter = nodemailer.createTransport({
 
 /** Map every stage to a recipient list (or leave empty to skip) */
 const stageRecipients = {
-  "ETD Padding":                       ["pankajal2099@gmail.com"],
+  "ETD Pending":                       ["pankajal2099@gmail.com"],
   "ETD Confirmation from plant":       ["aniketgaikwad7224@gmail.com"],
   "ETD notification for SC-cremika":   ["9to5withnikhil@gmail.com"],
   "SC to concerned sales & customer":  ["cp5553135@gmail.com"],

@@ -68,7 +68,7 @@ export default function InvoiceDetail() {
 
   return (
     <div className="container mx-auto p-6">
-      <Link href="/admin/sales-order-view">
+      <Link href="/users/sales-order-view">
         <button className="mb-4 px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded transition">
           ← Back to Order List
         </button>
@@ -243,62 +243,50 @@ export default function InvoiceDetail() {
         )}
       </div>
 
+     {/* ATTACHMENTS */}
       <div className="bg-white shadow-md rounded-lg p-6 mb-6">
         <h2 className="text-2xl font-semibold mb-4">Attachments</h2>
-        {order.attachments && order.attachments.length > 0 ? (
-          <ul className="list-disc pl-6 space-y-2">
-            {/* {order.attachments.map((attachment, index) => (
-              <li key={index} className="flex items-center space-x-2">
-                <a
-                  href={attachment.fileUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline"
-                >
-                  {attachment.fileName}
-                </a>
-                <span className="text-sm text-gray-500">({attachment.fileType})</span>
-                <span className="text-xs text-gray-400">
-                  {new Date(attachment.uploadedAt).toLocaleDateString()}
-                </span>
-              </li>
-            ))} */}
+        {order.attachments?.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {order.attachments.map((f, i) => {
+              const isImage = f.fileType?.startsWith("image/");
+              const isPDF = f.fileType === "application/pdf";
+              const displayDate = f.uploadedAt ? new Date(f.uploadedAt).toLocaleDateString() : "";
 
-            {order.attachments?.length > 0 && (
-  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-    {order.attachments.map((f, i) => (
-      <div key={i} className="border rounded p-2 text-center">
-        {f.fileType?.startsWith("image/") ? (
-          <img src={f.fileUrl} alt={f.fileName} className="h-64 w-full object-cover rounded" />
-        ) : f.fileType === "application/pdf" ? (
-          <object data={f.fileUrl} type="application/pdf" className="h-72 w-full rounded">
-            <a href={f.fileUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
-              {f.fileName}
-            </a>
-          </object>
-        ) : (
-          <a href={f.fileUrl} target="_blank" rel="noopener noreferrer" className="truncate text-blue-600 underline">
-            {f.fileName}
-          </a>
-        )}
-      </div>
-    ))}
-  </div>
-)}
+              return (
+                <div key={i} className="border rounded-lg p-3 flex flex-col items-center justify-between text-center bg-gray-50">
+                  {isImage ? (
+                    <img src={f.fileUrl} alt={f.fileName} className="h-32 w-full object-contain rounded mb-2 bg-white" />
+                  ) : isPDF ? (
+                    <object data={f.fileUrl} type="application/pdf" className="h-32 w-full rounded mb-2">
+                      <p className="text-sm text-red-600">PDF Preview Not Available</p>
+                    </object>
+                  ) : (
+                    <div className="h-32 w-full flex items-center justify-center text-gray-500 text-sm bg-white rounded mb-2">
+                      No preview
+                    </div>
+                  )}
 
-          </ul>
+                  <a href={f.fileUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline truncate w-full" title={f.fileName}>
+                    {f.fileName}
+                  </a>
+                  <p className="text-xs text-gray-400 mt-1">{displayDate}</p>
+                </div>
+              );
+            })}
+          </div>
         ) : (
           <p className="text-gray-500">No attachments available.</p>
         )}
       </div>
 
       <div className="flex justify-end space-x-4">
-        <Link href="/admin/sales-order-view">
+        <Link href="/users/sales-order-view">
           <button className="px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded transition">
             Back to List
           </button>
         </Link>
-        <Link href={`/admin/sales-order-view/new?editId=${order._id}`}>
+        <Link href={`/users/sales-order-view/new?editId=${order._id}`}>
           <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition">
             Edit Order
           </button>

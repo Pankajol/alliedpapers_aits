@@ -2,60 +2,65 @@ import mongoose from "mongoose";
 import Counter from "./Counter"; // Assuming you have a Counter model for auto-incrementing IDs
 
 // Address schema for billing and shipping addresses
-const addressSchema = new mongoose.Schema({
-  address1: { type: String, trim: true },
-  address2: { type: String, trim: true },
-  city: { type: String, trim: true },
-  state: { type: String, trim: true },
-  zip: {
-    type: String,
-    trim: true,
-    match: [/^[0-9]{6}$/, "Invalid zip code format"]
+const addressSchema = new mongoose.Schema(
+  {
+    address1: { type: String, trim: true },
+    address2: { type: String, trim: true },
+    city: { type: String, trim: true },
+    state: { type: String, trim: true },
+    zip: {
+      type: String,
+      trim: true,
+      match: [/^[0-9]{6}$/, "Invalid zip code format"],
+    },
+    country: { type: String, trim: true },
   },
-  country: { type: String, trim: true }
-}, { _id: false });
+  { _id: false }
+);
 
 const ItemSchema = new mongoose.Schema({
-      // item: { type: mongoose.Schema.Types.ObjectId, ref: "Item" , required: false, },
-      itemCode: { type: String },
-      itemName: { type: String },
-      itemDescription: { type: String },
-      quantity: { type: Number,  },
-      orderedQuantity: { type: Number,  },
-      unitPrice: { type: Number,  },
-      discount: { type: Number,  },
-      freight: { type: Number,  },
-      gstRate: { type: Number,  },
-      taxOption: { type: String, enum: ["GST", "IGST"], default: "GST" },
-      priceAfterDiscount: { type: Number,  },
-      totalAmount: { type: Number,  },
-      gstAmount: { type: Number,  },
-      cgstAmount: { type: Number,  },
-      sgstAmount: { type: Number,  },
-      igstAmount: { type: Number,  },
-      tdsAmount: { type: Number,  },
-      // warehouse: { type: mongoose.Schema.Types.ObjectId, ref: "Warehouse" },
-      warehouseName: { type: String },
-      warehouseCode: { type: String },
-      stockAdded: { type: Boolean, default: false },
-      managedBy: { type: String },
-  
-   
-      removalReason: { type: String },
+  // item: { type: mongoose.Schema.Types.ObjectId, ref: "Item" , required: false, },
+  itemCode: { type: String },
+  itemName: { type: String },
+  itemDescription: { type: String },
+  quantity: { type: Number },
+  orderedQuantity: { type: Number },
+  unitPrice: { type: Number },
+  discount: { type: Number },
+  freight: { type: Number },
+  gstRate: { type: Number },
+  taxOption: { type: String, enum: ["GST", "IGST"], default: "GST" },
+  priceAfterDiscount: { type: Number },
+  totalAmount: { type: Number },
+  gstAmount: { type: Number },
+  cgstAmount: { type: Number },
+  sgstAmount: { type: Number },
+  igstAmount: { type: Number },
+  tdsAmount: { type: Number },
+  // warehouse: { type: mongoose.Schema.Types.ObjectId, ref: "Warehouse" },
+  warehouseName: { type: String },
+  warehouseCode: { type: String },
+  stockAdded: { type: Boolean, default: false },
+  managedBy: { type: String },
+
+  removalReason: { type: String },
 });
 
 const SalesOrderSchema = new mongoose.Schema(
-
   {
-     /* ⬇⬇ MULTITENANT FIELDS */
-    companyId:  { type: mongoose.Schema.Types.ObjectId, ref: 'Company', required: true },
-    createdBy:  { type: mongoose.Schema.Types.ObjectId, ref: 'CompanyUser' },
-    quotation: { type: mongoose.Schema.Types.ObjectId, ref: 'SalesQuotation' },
-    customer: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
+    /* ⬇⬇ MULTITENANT FIELDS */
+    companyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+      required: true,
+    },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "CompanyUser" },
+    quotation: { type: mongoose.Schema.Types.ObjectId, ref: "SalesQuotation" },
+    customer: { type: mongoose.Schema.Types.ObjectId, ref: "Customer" },
     customerCode: { type: String, required: true },
     customerName: { type: String, required: true },
     contactPerson: { type: String },
-    salesNumber: { type: String, },
+    salesNumber: { type: String },
     refNumber: { type: String },
     status: { type: String, default: "Open" },
     statusStages: { type: String, default: "ETD Confirmation from plant" }, // Default status stage
@@ -68,13 +73,13 @@ const SalesOrderSchema = new mongoose.Schema(
     // Address fieldss
     billingAddress: {
       type: addressSchema,
-      required: false
+      required: false,
     },
     shippingAddress: {
       type: addressSchema,
-      required: false
+      required: false,
     },
-   
+
     items: [ItemSchema],
     salesEmployee: { type: String },
     remarks: { type: String },
@@ -89,12 +94,14 @@ const SalesOrderSchema = new mongoose.Schema(
     igstAmount: { type: Number, default: 0 },
     grandTotal: { type: Number, default: 0 },
     openBalance: { type: Number, default: 0 },
-    attachments: [{
-  fileName: String,
-  fileUrl: String,    // e.g., /uploads/somefile.pdf
-  fileType: String,
-  uploadedAt: { type: Date, default: Date.now }
-}],
+    attachments: [
+      {
+        fileName: String,
+        fileUrl: String, // e.g., /uploads/somefile.pdf
+        fileType: String,
+        uploadedAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   { timestamps: true }
 );
@@ -103,7 +110,7 @@ const SalesOrderSchema = new mongoose.Schema(
 SalesOrderSchema.index({ companyId: 1, salesNumber: 1 }, { unique: true });
 
 /* per‑tenant auto‑increment */
-SalesOrderSchema.pre('save', async function (next) {
+SalesOrderSchema.pre("save", async function (next) {
   if (this.salesNumber) return next();
   try {
     const key = `SalesOrder_${this.companyId}`;
@@ -112,29 +119,39 @@ SalesOrderSchema.pre('save', async function (next) {
       { $inc: { seq: 1 } },
       { new: true, upsert: true }
     );
-    this.salesNumber = `SALE-${String(counter.seq).padStart(3, '0')}`;
+
+    const now = new Date();
+const currentYear = now.getFullYear();
+const currentMonth = now.getMonth() + 1;
+
+// Calculate financial year
+let fyStart = currentYear;
+let fyEnd = currentYear + 1;
+
+if (currentMonth < 4) {
+  // Jan–Mar => part of previous FY
+  fyStart = currentYear - 1;
+  fyEnd = currentYear;
+}
+
+const financialYear = `${fyStart}-${String(fyEnd).slice(-2)}`;
+
+// Assuming `counter.seq` is your sequence number (e.g., 30)
+const paddedSeq = String(counter.seq).padStart(5, '0');
+
+// Generate final sales order number
+this.salesNumber = `SAL-ORD/${financialYear}/${paddedSeq}`;
+
+
+    // this.salesNumber = `Sale-${String(counter.seq).padStart(3, '0')}`;
     next();
-  } catch (err) { next(err); }
+  } catch (err) {
+    next(err);
+  }
 });
-
-
-
 
 export default mongoose.models.SalesOrder ||
   mongoose.model("SalesOrder", SalesOrderSchema);
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // import mongoose from "mongoose";
 
@@ -163,7 +180,7 @@ export default mongoose.models.SalesOrder ||
 //   warehouse: { type: String, required: true },
 //   warehouseName: { type: String, required: true },
 //   warehouseCode: { type: String, required: true },
-  
+
 //   errorMessage: { type: String },
 // });
 
@@ -193,7 +210,6 @@ export default mongoose.models.SalesOrder ||
 // });
 
 // export default mongoose.models.SalesOrder || mongoose.model("SalesOrder", SalesOrderSchema);
-
 
 // import mongoose from 'mongoose';
 
