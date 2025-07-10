@@ -28,7 +28,7 @@ const initialOrderState = {
   refNumber: "",
   salesEmployee: "",
   status: "Open",
-  statusStages: "ETD Pandding",
+  statusStages: "ETD Pending",
   orderDate: "",
   expectedDeliveryDate: "",
   billingAddress: [],
