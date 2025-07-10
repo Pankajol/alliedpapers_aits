@@ -5,7 +5,6 @@ import { getTokenFromHeader, verifyJWT } from '@/lib/auth';
 import { parseForm } from '@/lib/formParser';
 import { v2 as cloudinary } from 'cloudinary';
 
-
 export const config = { api: { bodyParser: false } };
 
 cloudinary.config({
@@ -36,8 +35,9 @@ export async function POST(req) {
     const { fields, files } = await parseForm(req);
     const orderData = JSON.parse(fields.orderData || "{}");
 
+    // Clean up IDs
     delete orderData._id;
-    orderData.items?.forEach(item => delete item._id);
+    orderData.items?.forEach((item) => delete item._id);
     delete orderData.billingAddress?._id;
     delete orderData.shippingAddress?._id;
 
@@ -52,6 +52,7 @@ export async function POST(req) {
       ? [files.newFiles]
       : [];
 
+    // ✅ Upload files to Cloudinary
     orderData.attachments = await Promise.all(
       fileArray.map(async (file) => {
         const result = await cloudinary.uploader.upload(file.filepath, {
@@ -70,17 +71,18 @@ export async function POST(req) {
 
     const order = await SalesOrder.create(orderData);
 
-    return NextResponse.json(
-      { success: true, message: "Sales order created", orderId: order._id },
-      { status: 201 }
-    );
+    return NextResponse.json({
+      success: true,
+      message: "Sales order created",
+      orderId: order._id,
+    }, { status: 201 });
 
   } catch (err) {
     console.error("POST /api/sales-order error:", err);
-    return NextResponse.json(
-      { success: false, message: err.message },
-      { status: /Forbidden|Unauthorized/.test(err.message) ? 401 : 500 }
-    );
+    return NextResponse.json({
+      success: false,
+      message: err.message,
+    }, { status: /Forbidden|Unauthorized/.test(err.message) ? 401 : 500 });
   }
 }
 
