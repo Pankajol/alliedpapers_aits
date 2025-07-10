@@ -112,19 +112,7 @@ function SalesOrderForm() {
 
   // ---- Auth parsing ----
   const [isAdmin, setIsAdmin] = useState(false);
-  // useEffect(() => {
-  //   const token = localStorage.getItem("token");
-  //   if (!token) return;
-  //   try {
-  //     const d = jwt_decode(token);
-  //     const roles = Array.isArray(d?.roles) ? d.roles : [];
-  //     const roleStr = d?.role ?? d?.userRole ?? null;
-  //     const isCompany = d?.type === "company" && d?.companyName;
-  //     setIsAdmin(roleStr === "admin" || roles.includes("admin") || isCompany);
-  //   } catch (e) {
-  //     console.error("JWT decode error", e);
-  //   }
-  // }, []);
+
 
   //  
 useEffect(() => {
@@ -197,12 +185,7 @@ useEffect(() => {
     const totalBefore = items.reduce((s, i) => s + (i.unitPrice * i.quantity - i.discount), 0);
     const gstTotal = items.reduce((s, i) => s + i.gstAmount, 0);
 
-    // const grandTotal = ((((totalBefore) + (gstTotal)) + (formData.freight )) + (formData.rounding));
-  //   const grandTotal =
-  // (Number(totalBefore) || 0) +
-  // (Number(gstTotal) || 0) +
-  // (Number(formData.freight) || 0) +
-  // (Number(formData.rounding) || 0);
+
 
   const unroundedTotal = totalBefore + gstTotal + formData.freight;
 const roundedTotal = Math.round(unroundedTotal);
@@ -240,43 +223,7 @@ formData.rounding = rounding;
   const addItemRow = () => !isReadOnly && setFormData((p) => ({ ...p, items: [...p.items, { ...initialOrderState.items[0] }] }));
   const removeItemRow = (idx) => !isReadOnly && setFormData((p) => ({ ...p, items: p.items.filter((_, i) => i !== idx) }));
 
-  // ---- Submit ----
-  // const handleSubmit = async () => {
-  //   if (!formData.customerCode || !formData.customerName) { toast.error("Select a customer"); return; }
-  //   setSubmitting(true);
-  //   try {
-  //     const token = localStorage.getItem("token");
-  //     if (!token) throw new Error("Not authenticated");
-  //     const headers = { Authorization: `Bearer ${token}` };
-    //       // 🟡 Convert plain string to object if needed
-    // if (typeof formData.shippingAddress === "string") {
-    //   formData.shippingAddress = { address1: formData.shippingAddress };
-    // }
-    // if (typeof formData.billingAddress === "string") {
-    //   formData.billingAddress = { address1: formData.billingAddress };
-    // }
-  //     if (editId) {
-  //       const payload = isAdmin ? formData : { status: formData.status, statusStages: formData.statusStages };
-  //       await axios.put(`/api/sales-order/${editId}`, payload, { headers });
-  //       toast.success("Updated successfully");
-  //     } else {
-  //       const body = new FormData();
-  //       body.append("orderData", JSON.stringify(formData));
-  //       attachments.forEach((f) => body.append("attachments", f));
-  //       formData.append("existingFiles", JSON.stringify(existingFiles));
-  //       formData.append("removedFiles", JSON.stringify(removedFiles));
-  //       await axios.post("/api/sales-order", body, { headers });
-  //       toast.success("Created successfully");
-  //       setFormData(initialOrderState);
-  //       setAttachments([]);
-  //     }
-  //     router.push("/admin/sales-order-view");
-  //   } catch (e) {
-  //     toast.error(e?.response?.data?.message || e.message);
-  //   } finally {
-  //     setSubmitting(false);
-  //   }
-  // };
+  
 
 
   const handleSubmit = async () => {
@@ -329,10 +276,9 @@ formData.rounding = rounding;
 
     /* ───────── CREATE ───────── */
     } else {
-      const body = new FormData();
-      body.append("orderData", JSON.stringify(formData));
-      attachments.forEach((f) => body.append("newFiles", f));
-      await axios.post("/api/sales-order", body, { headers });
+     await uploadOrderWithFiles("/api/sales-order", formData, attachments, token);
+
+
       toast.success("Created successfully");
       setFormData(initialOrderState);
       setAttachments([]);
@@ -483,34 +429,7 @@ formData.rounding = rounding;
         <textarea name="remarks" value={formData.remarks} onChange={handleChange} readOnly={isReadOnly} rows={3} className={isReadOnly ? ro : base} />
       </div>
 
-      {/* ---------- Attachments ---------- */}
-      {/* <div className="mt-6">
-        <label className="font-medium block mb-1">Attachments</label>
-        <input type="file" multiple accept="image/*,application/pdf" disabled={isReadOnly} onChange={(e) => {
-          if (isReadOnly) return;
-          const files = Array.from(e.target.files);
-          setAttachments((prev) => {
-            const m = new Map(prev.map((f) => [f.name + f.size, f]));
-            files.forEach((f) => m.set(f.name + f.size, f));
-            return [...m.values()];
-          });
-          e.target.value = "";
-        }} className={isReadOnly ? `${ro} cursor-not-allowed` : base} />
-        {!isReadOnly && attachments.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-3">
-            {attachments.map((file, idx) => {
-              const url = URL.createObjectURL(file);
-              const preview = file.type.startsWith("image/") ? <img src={url} alt={file.name} className="h-24 w-full object-cover rounded" /> : file.type === "application/pdf" ? <object data={url} type="application/pdf" className="h-24 w-full rounded" /> : <p className="truncate text-xs">{file.name}</p>;
-              return (
-                <div key={idx} className="relative border rounded p-2 text-center">
-                  {preview}
-                  <button onClick={() => setAttachments((prev) => prev.filter((_, i) => i !== idx))} className="absolute top-1 right-1 bg-red-600 text-white rounded px-1 text-xs">×</button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div> */}
+ 
 
 
 <div className="mt-6">
@@ -566,23 +485,24 @@ formData.rounding = rounding;
 )}
 
   {/* New Uploads */}
-  <input
-    type="file"
-    multiple
-    accept="image/*,application/pdf"
-    disabled={isReadOnly}
-    onChange={(e) => {
-      if (isReadOnly) return;
-      const files = Array.from(e.target.files);
-      setAttachments((prev) => {
-        const m = new Map(prev.map((f) => [f.name + f.size, f]));
-        files.forEach((f) => m.set(f.name + f.size, f));
-        return [...m.values()];
-      });
-      e.target.value = "";
-    }}
-    className={isReadOnly ? `${ro} cursor-not-allowed` : base}
-  />
+<input
+  type="file"
+  multiple
+  accept="image/*,application/pdf"
+  disabled={isReadOnly}
+  onChange={(e) => {
+    if (isReadOnly) return;
+    const files = Array.from(e.target.files);
+    setAttachments((prev) => {
+      const m = new Map(prev.map((f) => [f.name + f.size, f]));
+      files.forEach((f) => m.set(f.name + f.size, f));
+      return [...m.values()];
+    });
+    e.target.value = "";
+  }}
+  className={isReadOnly ? `${ro} cursor-not-allowed` : base}
+/>
+
 
   {/* Previews of new uploads */}
   {!isReadOnly && attachments.length > 0 && (
@@ -623,6 +543,22 @@ formData.rounding = rounding;
     </div>
   );
 }
+
+
+// ✅ Patch: fix file upload issue (remove manual content-type header)
+export const uploadOrderWithFiles = async (url, formData, attachments, token) => {
+  const body = new FormData();
+  body.append("orderData", JSON.stringify(formData));
+  attachments.forEach((f) => body.append("newFiles", f));
+
+  const response = await axios.post(url, body, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response;
+};
 
 
 

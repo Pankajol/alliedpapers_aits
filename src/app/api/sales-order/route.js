@@ -1,21 +1,12 @@
 import { NextResponse } from 'next/server';
-import mongoose from 'mongoose';
 import dbConnect from '@/lib/db';
 import SalesOrder from '@/models/SalesOrder';
 import { getTokenFromHeader, verifyJWT } from '@/lib/auth';
-import { sendSalesOrderEmail } from "@/lib/mailer";
 import { parseForm } from '@/lib/formParser';
 import { v2 as cloudinary } from 'cloudinary';
 
-export const config = {
-  api: {
-    bodyParser: false, // Required for formidable parsing
-  },
-};
+export const config = { api: { bodyParser: false } };
 
-const { Types } = mongoose;
-
-// ✅ Cloudinary config
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -23,64 +14,61 @@ cloudinary.config({
 });
 
 function isAuthorized(user) {
-  if (user.type === 'company') return true;
-  if (user.role === 'Sales Manager' || user.role === 'Admin') return true;
-  return user.permissions?.includes('sales');
+  return (
+    user.type === 'company' ||
+    user.role === 'Admin' ||
+    user.role === 'Sales Manager' ||
+    user.permissions?.includes('sales')
+  );
 }
 
 export async function POST(req) {
   await dbConnect();
 
   try {
-    // 1. Auth
     const token = getTokenFromHeader(req);
     const user = await verifyJWT(token);
-    if (!user || !isAuthorized(user)) throw new Error("Forbidden");
+    if (!user || !isAuthorized(user)) {
+      return NextResponse.json({ success: false, message: "Forbidden" }, { status: 401 });
+    }
 
-    // 2. Parse form
     const { fields, files } = await parseForm(req);
+    const orderData = JSON.parse(fields.orderData || "{}");
 
-    // 3. Parse order JSON
-    const orderData = JSON.parse(fields.orderData);
-
-    // 4. Clean IDs
     delete orderData._id;
-    orderData.items?.forEach(i => delete i._id);
+    orderData.items?.forEach(item => delete item._id);
     delete orderData.billingAddress?._id;
     delete orderData.shippingAddress?._id;
 
-    // 5. Add metadata
     orderData.companyId = user.companyId;
-    if (user.type === "user") orderData.createdBy = user.id;
+    if (user.type === "user") {
+      orderData.createdBy = user.id;
+    }
 
-    // 6. Upload files to Cloudinary
-    const fileArray = Array.isArray(files.attachments) ? files.attachments : [files.attachments];
+    const fileArray = Array.isArray(files.newFiles)
+      ? files.newFiles
+      : files.newFiles
+      ? [files.newFiles]
+      : [];
 
     orderData.attachments = await Promise.all(
-      fileArray
-        .filter(Boolean)
-        .map(async (file) => {
-          const result = await cloudinary.uploader.upload(file.filepath, {
-            folder: 'sales_orders',
-            resource_type: 'auto', // auto-detect image/pdf etc.
-          });
+      fileArray.map(async (file) => {
+        const result = await cloudinary.uploader.upload(file.filepath, {
+          folder: 'sales_orders',
+          resource_type: 'auto',
+        });
 
-          return {
-            fileName: file.originalFilename,
-            fileUrl: result.secure_url,
-            fileType: file.mimetype,
-            uploadedAt: new Date(),
-          };
-        })
+        return {
+          fileName: file.originalFilename,
+          fileUrl: result.secure_url,
+          fileType: file.mimetype,
+          uploadedAt: new Date(),
+        };
+      })
     );
 
-    // 7. Create in DB
     const order = await SalesOrder.create(orderData);
 
-    // 8. Send Email (optional)
-    // await sendSalesOrderEmail([...], order);
-
-    // 9. Response
     return NextResponse.json(
       { success: true, message: "Sales order created", orderId: order._id },
       { status: 201 }
@@ -94,6 +82,8 @@ export async function POST(req) {
     );
   }
 }
+
+
 
 export async function GET(req) {
   await dbConnect();

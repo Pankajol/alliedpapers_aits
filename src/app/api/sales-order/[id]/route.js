@@ -1,8 +1,6 @@
-
 import { NextResponse } from "next/server";
 import formidable from "formidable";
 import { Readable } from "stream";
-
 import dbConnect from "@/lib/db";
 import SalesOrder from "@/models/SalesOrder";
 import { getTokenFromHeader, verifyJWT } from "@/lib/auth";
@@ -11,7 +9,6 @@ import { v2 as cloudinary } from "cloudinary";
 
 export const config = { api: { bodyParser: false } };
 
-// Cloudinary setup
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -19,10 +16,12 @@ cloudinary.config({
 });
 
 function isAuthorized(user) {
-  if (user.type === "company") return true;
-  if (user.role === "Admin") return true;
-  if (user.role === "Sales Manager") return true;
-  return user.permissions?.includes("sales");
+  return (
+    user.type === "company" ||
+    user.role === "Admin" ||
+    user.role === "Sales Manager" ||
+    user.permissions?.includes("sales")
+  );
 }
 
 async function toNodeReq(request) {
@@ -110,14 +109,12 @@ export async function PUT(req, { params }) {
     const updateDoc = { $set: scalar };
 
     if (!limited) {
-      // Removed attachments (only from DB)
       if (removedFiles.length) {
         updateDoc.$pull = {
           attachments: { fileUrl: { $in: removedFiles.map((f) => f.fileUrl) } },
         };
       }
 
-      // Upload new files to Cloudinary
       if (newFiles.length) {
         const uploads = await Promise.all(
           newFiles.map(async (file) => {
@@ -151,6 +148,7 @@ export async function PUT(req, { params }) {
       { status: 200 }
     );
   } catch (err) {
+    console.error("PUT error:", err);
     return NextResponse.json(
       { message: "Error updating Sales Order", error: err.message },
       { status: 500 }
@@ -170,9 +168,6 @@ export async function DELETE(req, { params }) {
     const order = await SalesOrder.findByIdAndDelete(id);
     if (!order)
       return NextResponse.json({ message: "Sales Order not found" }, { status: 404 });
-
-    // Optionally remove from Cloudinary using `public_id` if stored
-    // Currently, we just delete the DB record and leave uploaded files
 
     return NextResponse.json({ message: "Sales Order deleted" }, { status: 200 });
   } catch (err) {
