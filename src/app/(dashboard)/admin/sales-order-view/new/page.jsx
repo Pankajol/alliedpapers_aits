@@ -226,8 +226,7 @@ formData.rounding = rounding;
 
   
 
-
-  const handleSubmit = async () => {
+const handleSubmit = async () => {
   if (!formData.customerCode || !formData.customerName) {
     toast.error("Select a customer");
     return;
@@ -237,9 +236,10 @@ formData.rounding = rounding;
   try {
     const token = localStorage.getItem("token");
     if (!token) throw new Error("Not authenticated");
+
     const headers = { Authorization: `Bearer ${token}` };
 
-          // 🟡 Convert plain string to object if needed
+    // 🛠 Fix: wrap string addresses into object
     if (typeof formData.shippingAddress === "string") {
       formData.shippingAddress = { address1: formData.shippingAddress };
     }
@@ -247,10 +247,21 @@ formData.rounding = rounding;
       formData.billingAddress = { address1: formData.billingAddress };
     }
 
-    /* ───────── EDIT ───────── */
+    // 📦 Utility: builds FormData
+    const buildFormData = (data, newFiles = [], removed = []) => {
+      const fd = new FormData();
+      fd.append("orderData", JSON.stringify(data));
+      newFiles.forEach((f) => fd.append("newFiles", f));
+      if (removed.length > 0) {
+        fd.append("removedFiles", JSON.stringify(removed));
+      }
+      return fd;
+    };
+
+    // ───────── 🛠 EDIT MODE ─────────
     if (editId) {
       if (!isAdmin) {
-        // limited role → only stage fields
+        // non-admins → only update stage
         await axios.put(
           `/api/sales-order/${editId}`,
           { status: formData.status, statusStages: formData.statusStages },
@@ -260,26 +271,18 @@ formData.rounding = rounding;
       } else {
         const fileChanges = attachments.length > 0 || removedFiles.length > 0;
         if (fileChanges) {
-          const body = new FormData();
-          body.append("orderData", JSON.stringify(formData));
-          attachments.forEach((f) => body.append("newFiles", f));
-          body.append("removedFiles", JSON.stringify(removedFiles));
+          const body = buildFormData(formData, attachments, removedFiles);
           await axios.put(`/api/sales-order/${editId}`, body, { headers });
         } else {
-          await axios.put(
-            `/api/sales-order/${editId}`,
-            formData,
-            { headers: { ...headers, "Content-Type": "application/json" } }
-          );
+          await axios.put(`/api/sales-order/${editId}`, formData, { headers });
         }
         toast.success("Updated successfully");
       }
 
-    /* ───────── CREATE ───────── */
+    // ───────── 🆕 CREATE MODE ─────────
     } else {
-     await uploadOrderWithFiles("/api/sales-order", formData, attachments, token);
-
-
+      const body = buildFormData(formData, attachments);
+      await axios.post("/api/sales-order", body, { headers });
       toast.success("Created successfully");
       setFormData(initialOrderState);
       setAttachments([]);
@@ -898,11 +901,11 @@ formData.rounding = rounding;
 //         });
 //         toast.success("✅ Sales Order updated successfully");
 //       } else {
-//         const body = new FormData();
-//         body.append("orderData", JSON.stringify(formData)); // the JSON blob
-//         attachments.forEach((file) => body.append("attachments", file));
-//         await axios.post("/api/sales-order", body, { headers });
-//         // const res = await axios.post("/api/sales-order", formData, { headers });
+        // const body = new FormData();
+        // body.append("orderData", JSON.stringify(formData)); // the JSON blob
+        // attachments.forEach((file) => body.append("attachments", file));
+        // await axios.post("/api/sales-order", body, { headers });
+        // // const res = await axios.post("/api/sales-order", formData, { headers });
 //         toast.success("✅ Sales Order created successfully");
 //         setFormData(initialOrderState); // reset form
 //         setAttachments([]);

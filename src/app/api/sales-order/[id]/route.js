@@ -52,7 +52,7 @@ async function parseMultipart(request) {
 export async function GET(req, { params }) {
   try {
     await dbConnect();
-    const { id } = params;
+    const { id } = await params;
     const order = await SalesOrder.findById(id);
     if (!order)
       return NextResponse.json({ message: "Sales Order not found" }, { status: 404 });
@@ -69,7 +69,7 @@ export async function GET(req, { params }) {
 export async function PUT(req, { params }) {
   try {
     await dbConnect();
-    const { id } = params;
+    const { id } = await params;
 
     const user = await verifyJWT(getTokenFromHeader(req));
     if (!user || !isAuthorized(user))
@@ -160,7 +160,7 @@ export async function PUT(req, { params }) {
 export async function DELETE(req, { params }) {
   try {
     await dbConnect();
-    const { id } = params;
+    const { id } =  await params;
     const user = await verifyJWT(getTokenFromHeader(req));
     if (!user || (user.role !== "Admin" && user.type !== "company"))
       return NextResponse.json({ message: "Forbidden" }, { status: 401 });

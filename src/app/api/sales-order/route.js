@@ -1,18 +1,21 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import SalesOrder from '@/models/SalesOrder';
+import formidable from "formidable";
+import { Readable } from "stream";
 import { getTokenFromHeader, verifyJWT } from '@/lib/auth';
-import { parseForm } from '@/lib/formParser';
 import { v2 as cloudinary } from 'cloudinary';
 
 export const config = { api: { bodyParser: false } };
 
+// ✅ Correct cloudinary config keys
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+// ✅ Permission check
 function isAuthorized(user) {
   return (
     user.type === 'company' ||
@@ -22,6 +25,33 @@ function isAuthorized(user) {
   );
 }
 
+// ✅ Convert Next.js request to Node.js stream for formidable
+async function toNodeReq(request) {
+  const buf = Buffer.from(await request.arrayBuffer());
+  const nodeReq = new Readable({
+    read() {
+      this.push(buf);
+      this.push(null);
+    },
+  });
+  nodeReq.headers = Object.fromEntries(request.headers.entries());
+  nodeReq.method = request.method;
+  nodeReq.url = request.url || "/";
+  return nodeReq;
+}
+
+// ✅ Parse multipart form data
+async function parseMultipart(request) {
+  const nodeReq = await toNodeReq(request);
+  const form = formidable({ multiples: true, keepExtensions: true });
+  return await new Promise((res, rej) =>
+    form.parse(nodeReq, (err, fields, files) =>
+      err ? rej(err) : res({ fields, files })
+    )
+  );
+}
+
+// ✅ Main handler
 export async function POST(req) {
   await dbConnect();
 
@@ -32,15 +62,16 @@ export async function POST(req) {
       return NextResponse.json({ success: false, message: "Forbidden" }, { status: 401 });
     }
 
-    const { fields, files } = await parseForm(req);
+    const { fields, files } = await parseMultipart(req);
     const orderData = JSON.parse(fields.orderData || "{}");
 
-    // Clean up IDs
+    // 🧹 Clean up Mongo IDs
     delete orderData._id;
     orderData.items?.forEach((item) => delete item._id);
     delete orderData.billingAddress?._id;
     delete orderData.shippingAddress?._id;
 
+    // 📌 Add metadata
     orderData.companyId = user.companyId;
     if (user.type === "user") {
       orderData.createdBy = user.id;
@@ -52,7 +83,15 @@ export async function POST(req) {
       ? [files.newFiles]
       : [];
 
-    // ✅ Upload files to Cloudinary
+    // ✅ Required attachments check
+    if (fileArray.length === 0) {
+      return NextResponse.json(
+        { success: false, message: "At least one attachment is required." },
+        { status: 400 }
+      );
+    }
+
+    // ☁️ Upload to Cloudinary
     orderData.attachments = await Promise.all(
       fileArray.map(async (file) => {
         const result = await cloudinary.uploader.upload(file.filepath, {
@@ -69,6 +108,7 @@ export async function POST(req) {
       })
     );
 
+    // 🧾 Create sales order
     const order = await SalesOrder.create(orderData);
 
     return NextResponse.json({
@@ -85,6 +125,7 @@ export async function POST(req) {
     }, { status: /Forbidden|Unauthorized/.test(err.message) ? 401 : 500 });
   }
 }
+
 
 
 

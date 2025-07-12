@@ -14,7 +14,7 @@ export const uploadOrderWithFiles = async (url, formData, attachments, token) =>
         Authorization: `Bearer ${token}`,
         'Content-Type': undefined, // Let axios set the correct boundary
       },
-      timeout: 10000, // Optional: 10s timeout for request
+      // Optional: 10s timeout for request
     });
 
     return response.data;
