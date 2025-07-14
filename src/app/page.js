@@ -55,9 +55,9 @@ export default function LandingPage() {
         >
           Welcome to <span className="text-amber-500">AITS ERP</span>
         </motion.h1>
-        <p className="text-center text-base md:text-lg max-w-2xl">
+        {/* <p className="text-center text-base md:text-lg max-w-2xl">
           Manage your sales, purchases, inventory, and business operations from one centralized, modern ERP platform.
-        </p>
+        </p> */}
       </header>
 
       {/* Actions & Features */}
