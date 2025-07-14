@@ -112,12 +112,13 @@ export async function POST(req) {
     // 🧾 Create sales order
     const order = await SalesOrder.create(orderData);
 
-    //   await sendSalesOrderEmail(
-    //   [
-    //     "gaurav@alliedpapers.com"
-    //   ],
-    //   order
-    // );
+      await sendSalesOrderEmail(
+      [
+        "gaurav@alliedpapers.com",
+        "vaishali@aitsind.com"
+      ],
+      order
+    );
 
     return NextResponse.json({
       success: true,
