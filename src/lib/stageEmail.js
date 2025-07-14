@@ -14,13 +14,13 @@ const transporter = nodemailer.createTransport({
 
 /** Map every stage to a recipient list (or leave empty to skip) */
 const stageRecipients = {
-  "ETD Pending":                       ["pankajal2099@gmail.com"],
-  "ETD Confirmation from plant":       ["aniketgaikwad7224@gmail.com"],
-  "ETD notification for SC-cremika":   ["9to5withnikhil@gmail.com"],
-  "SC to concerned sales & customer":  ["cp5553135@gmail.com"],
-  "Material in QC-OK/NOK":             ["pritammore1001@gmail.com"],
-  "Dispatch with qty":                 ["vaishali@aitsind.com"],
-  "Delivered to customer":             ["javeriya@aitsind.com"],
+  "ETD Pending":                       ["gaurav@alliedpapers.com","vaishali@aitsind.com"],
+  "ETD Confirmation from plant":       ["gaurav@alliedpapers.com"],
+  "ETD notification for SC-cremika":   ["gaurav@alliedpapers.com"],
+  "SC to concerned sales & customer":  ["gaurav@alliedpapers.com"],
+  "Material in QC-OK/NOK":             ["gaurav@alliedpapers.com"],
+  "Dispatch with qty":                 ["gaurav@alliedpapers.com"],
+  "Delivered to customer":             ["gaurav@alliedpapers.com"],
 };
 
 /**

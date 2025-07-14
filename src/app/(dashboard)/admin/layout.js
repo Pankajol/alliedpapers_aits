@@ -42,7 +42,7 @@ export default function AdminSidebar({ children }) {
 
   /* ---------- component ---------- */
   return (
-    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">
+    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900 ">
       {/* Mobile top‑bar --------------------------------------------------- */}
       <header className="md:hidden fixed top-0 inset-x-0 z-40 flex items-center justify-between px-4 h-14 bg-white dark:bg-gray-800 shadow">
         <button
@@ -64,11 +64,11 @@ export default function AdminSidebar({ children }) {
       )}
 
       {/* Sidebar ---------------------------------------------------------- */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-40 w-64 overflow-y-auto bg-gray-700 dark:bg-gray-800 text-white transform transition-transform duration-200 ease-in-out
-          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-          md:translate-x-0 md:static`}
-      >
+<aside
+  className={`inset-y-0 left-0 z-40 w-64 overflow-y-auto bg-gray-700 dark:bg-gray-800 text-white transform transition-transform duration-200 ease-in-out
+    ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+    md:translate-x-0 md:static fixed`}
+>
         {/* mobile close btn */}
         <div className="md:hidden flex items-center justify-between px-4 h-14">
           <h2 className="text-xl font-bold flex items-center gap-2">
@@ -79,7 +79,7 @@ export default function AdminSidebar({ children }) {
           </button>
         </div>
 
-        <nav className="mt-6 px-2 pb-6 space-y-3">
+        <nav className="mt-6 px-2 pb-6 space-y-3 ">
           {/* Masters ----------------------------------------------------- */}
           <Section title="Masters" icon={<HiUsers />} isOpen={openMenu === 'master'} onToggle={() => toggleMenu('master')}>
             <Item href="/admin/createCustomers" icon={<HiUserGroup />} label="Create Customer" close={closeSidebar} />

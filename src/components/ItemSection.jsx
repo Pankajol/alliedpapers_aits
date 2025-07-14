@@ -119,7 +119,7 @@ const ItemSection = ({ items, onItemChange, onAddItem, onRemoveItem }) => {
             <th className="border p-2">Unit Price</th>
             <th className="border p-2">Discount</th>
             <th className="border p-2">Price</th>
-            <th className="border p-2">Freight</th>
+            {/* <th className="border p-2">Freight</th> */}
             <th className="border p-2">Total</th>
             <th className="border p-2">Tax Option</th>
             {globalTaxOption === "GST" && (
@@ -201,14 +201,14 @@ const ItemSection = ({ items, onItemChange, onAddItem, onRemoveItem }) => {
                     className="w-full border rounded p-1 bg-gray-100"
                   />
                 </td>
-                <td className="border p-1">
+                {/* <td className="border p-1">
                   <input
                     type="number"
                     value={item.freight}
                     onChange={(e) => handleFieldChange(index, "freight", e.target.value)}
                     className="w-full border rounded p-1"
                   />
-                </td>
+                </td> */}
                 <td className="border p-1">
                   <input
                     type="number"

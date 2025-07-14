@@ -84,27 +84,27 @@ export default function InvoiceDetail() {
               <p><strong>Customer Code:</strong> {order.customerCode}</p>
               <p><strong>Customer Name:</strong> {order.customerName}</p>
               <p><strong>Contact Person:</strong> {order.contactPerson}</p>
-              <p><strong>Sales Employee:</strong> {order.salesEmployee || '-'}</p>
+              {/* <p><strong>Sales Employee:</strong> {order.salesEmployee || '-'}</p> */}
             </div>
           </div>
           
           <div>
             <h2 className="text-xl font-semibold mb-4">Order Information</h2>
             <div className="space-y-2">
-              <p><strong>Order Number:</strong> {order.refNumber}</p>
+              <p><strong>Order Number:</strong> {order.salesNumber}</p>
               <p><strong>Order Date:</strong> {formatDate(order.orderDate)}</p>
               <p><strong>Expected Delivery:</strong> {formatDate(order.expectedDeliveryDate)}</p>
               <p>
-                <strong>Status:</strong> 
+                <strong>Sales Stages:</strong> 
                 <span className={`ml-2 px-2 py-1 rounded text-sm ${
-                  order.status === "Confirmed" 
+                  order.statusStages === "Delivered to customer" 
                     ? "bg-green-200 text-green-800" 
                     : "bg-yellow-200 text-yellow-800"
                 }`}>
-                  {order.status}
+                  {order.statusStages}
                 </span>
               </p>
-              <p><strong>From Quote:</strong> {order.fromQuote ? 'Yes' : 'No'}</p>
+              {/* <p><strong>From Quote:</strong> {order.fromQuote ? 'Yes' : 'No'}</p> */}
             </div>
           </div>
         </div>
@@ -188,7 +188,7 @@ export default function InvoiceDetail() {
                   <th className="border p-2 text-left">Item Code</th>
                   <th className="border p-2 text-left">Item Name</th>
                   <th className="border p-2 text-left">Description</th>
-                  <th className="border p-2 text-left">Warehouse</th>
+                  {/* <th className="border p-2 text-left">Warehouse</th> */}
                   <th className="border p-2 text-center">Qty</th>
                   <th className="border p-2 text-center">Unit Price</th>
                   <th className="border p-2 text-center">Discount</th>
@@ -202,9 +202,9 @@ export default function InvoiceDetail() {
                     <td className="border p-2">{item.itemCode}</td>
                     <td className="border p-2">{item.itemName}</td>
                     <td className="border p-2">{item.itemDescription}</td>
-                    <td className="border p-2">
+                    {/* <td className="border p-2">
                       {item.warehouseCode} - {item.warehouseName}
-                    </td>
+                    </td> */}
                     <td className="border p-2 text-center">
                       <div className="flex flex-col">
                         <span>Ordered: {item.quantity}</span>

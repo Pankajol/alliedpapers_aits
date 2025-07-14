@@ -63,7 +63,7 @@ const SalesOrderSchema = new mongoose.Schema(
     salesNumber: { type: String },
     refNumber: { type: String },
     status: { type: String, default: "Open" },
-    statusStages: { type: String, default: "ETD Confirmation from plant" }, // Default status stage
+    statusStages: { type: String }, // Default status stage
     postingDate: { type: Date },
     orderDate: { type: Date },
     expectedDeliveryDate: { type: Date },

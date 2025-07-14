@@ -79,26 +79,26 @@ export default function InvoiceDetail() {
               <p><strong>Customer Code:</strong> {order.customerCode}</p>
               <p><strong>Customer Name:</strong> {order.customerName}</p>
               <p><strong>Contact Person:</strong> {order.contactPerson}</p>
-              <p><strong>Sales Employee:</strong> {order.salesEmployee || '-'}</p>
+              {/* <p><strong>Sales Employee:</strong> {order.salesEmployee || '-'}</p> */}
             </div>
           </div>
           <div>
             <h2 className="text-xl font-semibold mb-4">Order Information</h2>
             <div className="space-y-2">
-              <p><strong>Order Number:</strong> {order.refNumber}</p>
+              <p><strong>Order Number:</strong> {order.salesNumber}</p>
               <p><strong>Order Date:</strong> {formatDate(order.orderDate)}</p>
               <p><strong>Expected Delivery:</strong> {formatDate(order.expectedDeliveryDate)}</p>
               <p>
-                <strong>Status:</strong>
+                <strong> Sales Stages:</strong>
                 <span className={`ml-2 px-2 py-1 rounded text-sm ${
-                  order.status === "Confirmed"
+                  order.statusStages === "Delivered to customer"
                     ? "bg-green-200 text-green-800"
                     : "bg-yellow-200 text-yellow-800"
                 }`}>
-                  {order.status}
+                  {order.statusStages}
                 </span>
               </p>
-              <p><strong>From Quote:</strong> {order.fromQuote ? 'Yes' : 'No'}</p>
+              {/* <p><strong>From Quote:</strong> {order.fromQuote ? 'Yes' : 'No'}</p> */}
             </div>
           </div>
         </div>

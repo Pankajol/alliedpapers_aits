@@ -3,6 +3,7 @@ import dbConnect from '@/lib/db';
 import SalesOrder from '@/models/SalesOrder';
 import formidable from "formidable";
 import { Readable } from "stream";
+import { sendSalesOrderEmail } from "@/lib/mailer";
 import { getTokenFromHeader, verifyJWT } from '@/lib/auth';
 import { v2 as cloudinary } from 'cloudinary';
 
@@ -110,6 +111,13 @@ export async function POST(req) {
 
     // 🧾 Create sales order
     const order = await SalesOrder.create(orderData);
+
+    //   await sendSalesOrderEmail(
+    //   [
+    //     "gaurav@alliedpapers.com"
+    //   ],
+    //   order
+    // );
 
     return NextResponse.json({
       success: true,
@@ -228,16 +236,16 @@ export async function GET(req) {
 //     // 7. Create sales order in DB
 //     const order = await SalesOrder.create(orderData);
 
-//     // 8. Send email
-//     // await sendSalesOrderEmail(
-//     //   [
-//     //     "aniketgaikwad7224@gmail.com",
-//     //     "9to5withnikhil@gmail.com",
-//     //     "cp5553135@gmail.com",
-//     //     "pritammore1001@gmail.com"
-//     //   ],
-//     //   order
-//     // );
+   // // 8. Send email
+    // await sendSalesOrderEmail(
+    //   [
+    //     "aniketgaikwad7224@gmail.com",
+    //     "9to5withnikhil@gmail.com",
+    //     "cp5553135@gmail.com",
+    //     "pritammore1001@gmail.com"
+    //   ],
+    //   order
+    // );
 
 //     // 9. Return response
 //     return NextResponse.json(
