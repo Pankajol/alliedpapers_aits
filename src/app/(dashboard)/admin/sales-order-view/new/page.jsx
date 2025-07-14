@@ -188,9 +188,10 @@ useEffect(() => {
 
 
 
-  const unroundedTotal = totalBefore + gstTotal + formData.freight;
+    const freight = parseFloat(formData.freight) || 0;
+const unroundedTotal = totalBefore + gstTotal + freight;
 const roundedTotal = Math.round(unroundedTotal);
-const  rounding = +(roundedTotal - unroundedTotal).toFixed(2);
+const rounding = +(roundedTotal - unroundedTotal).toFixed(2);
 const grandTotal = roundedTotal;
 formData.rounding = rounding;
 

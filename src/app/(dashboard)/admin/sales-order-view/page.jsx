@@ -416,7 +416,7 @@ function Table({ orders, filters, setFilters, onDelete, onCopy }) {
           </tr>
         </thead>
         <tbody>
-          {orders.map((o, i) => (
+          {[...orders].reverse().map((o, i) => (
             <tr
               key={o._id}
               className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -559,68 +559,68 @@ function Card({ order, idx, onDelete, onCopy }) {
 /* ================================================================= */
 /*  Row Action Menu (dropdown)                                       */
 /* ================================================================= */
-function RowMenu({ order, onDelete, onCopy }) {
-  const [open, setOpen] = useState(false);
-  const btnRef = useRef(null);
+// function RowMenu({ order, onDelete, onCopy }) {
+//   const [open, setOpen] = useState(false);
+//   const btnRef = useRef(null);
 
-  const [coords, setCoords] = useState({ top: 0, left: 0 });
-  useEffect(() => {
-    if (open && btnRef.current) {
-      const { bottom, right } = btnRef.current.getBoundingClientRect();
-      setCoords({ top: bottom + 8, left: right - 192 });
-    }
-  }, [open]);
+//   const [coords, setCoords] = useState({ top: 0, left: 0 });
+//   useEffect(() => {
+//     if (open && btnRef.current) {
+//       const { bottom, right } = btnRef.current.getBoundingClientRect();
+//       setCoords({ top: bottom + 8, left: right - 192 });
+//     }
+//   }, [open]);
 
-  const MenuItem = ({ icon, label, onClick, color = '' }) => (
-    <button
-      onClick={() => { onClick(); setOpen(false); }}
-      className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600"
-    >
-      <span className={`${color}`}>{icon}</span> {label}
-    </button>
-  );
+//   const MenuItem = ({ icon, label, onClick, color = '' }) => (
+//     <button
+//       onClick={() => { onClick(); setOpen(false); }}
+//       className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600"
+//     >
+//       <span className={`${color}`}>{icon}</span> {label}
+//     </button>
+//   );
 
-  return (
-    <>
-      <button
-        ref={btnRef}
-        onClick={() => setOpen(!open)}
-        className="p-2 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full focus:ring-2 focus:ring-blue-500"
-      >
-        <FaEllipsisV size={16} />
-      </button>
+//   return (
+//     <>
+//       <button
+//         ref={btnRef}
+//         onClick={() => setOpen(!open)}
+//         className="p-2 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full focus:ring-2 focus:ring-blue-500"
+//       >
+//         <FaEllipsisV size={16} />
+//       </button>
 
-      {open && (
-        <div
-          style={{ top: coords.top, left: coords.left }}
-          className="fixed z-50 w-48 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded shadow-lg"
-        >
-          <MenuItem icon={<FaEye />} label="View"
-            onClick={() => (window.location.href = `/admin/sales-order-view/view/${order._id}`)}
-          />
-          <MenuItem icon={<FaEdit />} label="Edit"
-            onClick={() => (window.location.href = `/admin/sales-order-view/new?editId=${order._id}`)}
-          />
-          <MenuItem icon={<FaCopy />} label="Copy → Delivery"
-            onClick={() => onCopy(order, 'Delivery')}
-          />
-          <MenuItem icon={<FaCopy />} label="Copy → Invoice"
-            onClick={() => onCopy(order, 'Invoice')}
-          />
-          <MenuItem icon={<FaEnvelope />} label="Email"
-            onClick={() => (window.location.href = `/admin/sales-order-email/${order._id}`)}
-          />
-          <MenuItem icon={<FaWhatsapp />} label="WhatsApp"
-            onClick={() => (window.location.href = `/admin/sales-order-whatsapp/${order._id}`)}
-          />
-          <MenuItem icon={<FaTrash />} label="Delete" color="text-red-600"
-            onClick={() => onDelete(order._id)}
-          />
-        </div>
-      )}
-    </>
-  );
-}
+//       {open && (
+//         <div
+//           style={{ top: coords.top, left: coords.left }}
+//           className="fixed z-50 w-48 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded shadow-lg"
+//         >
+//           <MenuItem icon={<FaEye />} label="View"
+//             onClick={() => (window.location.href = `/admin/sales-order-view/view/${order._id}`)}
+//           />
+//           <MenuItem icon={<FaEdit />} label="Edit"
+//             onClick={() => (window.location.href = `/admin/sales-order-view/new?editId=${order._id}`)}
+//           />
+//           <MenuItem icon={<FaCopy />} label="Copy → Delivery"
+//             onClick={() => onCopy(order, 'Delivery')}
+//           />
+//           <MenuItem icon={<FaCopy />} label="Copy → Invoice"
+//             onClick={() => onCopy(order, 'Invoice')}
+//           />
+//           <MenuItem icon={<FaEnvelope />} label="Email"
+//             onClick={() => (window.location.href = `/admin/sales-order-email/${order._id}`)}
+//           />
+//           <MenuItem icon={<FaWhatsapp />} label="WhatsApp"
+//             onClick={() => (window.location.href = `/admin/sales-order-whatsapp/${order._id}`)}
+//           />
+//           <MenuItem icon={<FaTrash />} label="Delete" color="text-red-600"
+//             onClick={() => onDelete(order._id)}
+//           />
+//         </div>
+//       )}
+//     </>
+//   );
+// }
 
 
 
@@ -1163,3 +1163,111 @@ function RowMenu({ order, onDelete, onCopy }) {
 //     </div>
 //   );
 // }
+
+
+
+function RowMenu({ order, onDelete, onCopy }) {
+  const [open, setOpen] = useState(false);
+  const btnRef = useRef(null);
+  const menuRef = useRef(null);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
+
+  // Positioning
+  useEffect(() => {
+    if (open && btnRef.current && menuRef.current) {
+      const btnRect = btnRef.current.getBoundingClientRect();
+      const menuRect = menuRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+
+      let top = btnRect.bottom + 8;
+      let left = btnRect.right - 192;
+
+      if (top + menuRect.height > viewportHeight) {
+        top = btnRect.top - menuRect.height - 8;
+      }
+
+      if (left + menuRect.width > viewportWidth) {
+        left = viewportWidth - menuRect.width - 8;
+      }
+
+      setCoords({ top, left });
+    }
+  }, [open]);
+
+  // Close on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(e.target) &&
+        btnRef.current &&
+        !btnRef.current.contains(e.target)
+      ) {
+        setOpen(false);
+      }
+    };
+
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [open]);
+
+  const MenuItem = ({ icon, label, onClick, color = '' }) => (
+    <button
+      onClick={() => {
+        onClick();
+        setOpen(false);
+      }}
+      className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600"
+    >
+      <span className={color}>{icon}</span> {label}
+    </button>
+  );
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        onClick={() => setOpen(!open)}
+        className="p-2 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full focus:ring-2 focus:ring-blue-500"
+      >
+        <FaEllipsisV size={16} />
+      </button>
+
+      {open && (
+        <div
+          ref={menuRef}
+          style={{ top: coords.top, left: coords.left }}
+          className="fixed z-50 w-48 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded shadow-lg"
+        >
+          <MenuItem icon={<FaEye />} label="View"
+            onClick={() => (window.location.href = `/admin/sales-order-view/view/${order._id}`)}
+          />
+          <MenuItem icon={<FaEdit />} label="Edit"
+            onClick={() => (window.location.href = `/admin/sales-order-view/new?editId=${order._id}`)}
+          />
+          <MenuItem icon={<FaCopy />} label="Copy → Delivery"
+            onClick={() => onCopy(order, 'Delivery')}
+          />
+          <MenuItem icon={<FaCopy />} label="Copy → Invoice"
+            onClick={() => onCopy(order, 'Invoice')}
+          />
+          <MenuItem icon={<FaEnvelope />} label="Email"
+            onClick={() => (window.location.href = `/admin/sales-order-email/${order._id}`)}
+          />
+          <MenuItem icon={<FaWhatsapp />} label="WhatsApp"
+            onClick={() => (window.location.href = `/admin/sales-order-whatsapp/${order._id}`)}
+          />
+          <MenuItem icon={<FaTrash />} label="Delete" color="text-red-600"
+            onClick={() => onDelete(order._id)}
+          />
+        </div>
+      )}
+    </>
+  );
+}

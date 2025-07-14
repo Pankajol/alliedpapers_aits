@@ -203,11 +203,13 @@ function SalesOrderForm() {
     const gstTotal = items.reduce((s, i) => s + i.gstAmount, 0);
     // const grandTotal = totalBefore + gstTotal + formData.freight + formData.rounding;
 
-      const unroundedTotal = totalBefore + gstTotal + formData.freight;
+   const freight = parseFloat(formData.freight) || 0;
+const unroundedTotal = totalBefore + gstTotal + freight;
 const roundedTotal = Math.round(unroundedTotal);
-const  rounding = +(roundedTotal - unroundedTotal).toFixed(2);
+const rounding = +(roundedTotal - unroundedTotal).toFixed(2);
 const grandTotal = roundedTotal;
 formData.rounding = rounding;
+
 
     const openBalance = grandTotal - (formData.totalDownPayment + formData.appliedAmounts);
     setFormData((p) => ({ ...p, totalBeforeDiscount: round(totalBefore), gstTotal: round(gstTotal), grandTotal: round(grandTotal), openBalance: round(openBalance) }));
