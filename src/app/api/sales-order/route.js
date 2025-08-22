@@ -85,12 +85,12 @@ export async function POST(req) {
       : [];
 
     // ✅ Required attachments check
-    if (fileArray.length === 0) {
-      return NextResponse.json(
-        { success: false, message: "At least one attachment is required." },
-        { status: 400 }
-      );
-    }
+    // if (fileArray.length === 0) {
+    //   return NextResponse.json(
+    //     { success: false, message: "At least one attachment is required." },
+    //     { status: 400 }
+    //   );
+    // }
 
     // ☁️ Upload to Cloudinary
     orderData.attachments = await Promise.all(

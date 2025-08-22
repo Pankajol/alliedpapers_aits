@@ -1082,7 +1082,7 @@ export default function CustomerManagement() {
                 onChange={(e) =>
                   handleAddressChange("billing", i, "pin", e.target.value)
                 }
-                placeholder="ZIP"
+                placeholder="PIN"
                 className="border p-2 rounded"
               />
               <CountryStateSearch
@@ -1149,7 +1149,7 @@ export default function CustomerManagement() {
                 onChange={(e) =>
                   handleAddressChange("shipping", i, "pin", e.target.value)
                 }
-                placeholder="ZIP"
+                placeholder="PIN"
                 className="border p-2 rounded"
               />
               <CountryStateSearch

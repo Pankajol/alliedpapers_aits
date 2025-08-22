@@ -9,20 +9,77 @@ const round = (num, decimals = 2) => {
   return Number(n.toFixed(decimals));
 };
 
+// const computeItemValues = (item) => {
+//   const quantity = parseFloat(item.quantity);
+//   const unitPrice = parseFloat(item.unitPrice);
+//   const discount = parseFloat(item.discount);
+//   const freight = parseFloat(item.freight);
+//   const priceAfterDiscount = round(unitPrice - discount);
+//   const totalAmount = round(quantity * priceAfterDiscount + freight);
+
+//   if (item.taxOption === "GST") {
+//     const gstRate = parseFloat(item.gstRate);
+//     const cgstRate = gstRate / 2;
+//     const sgstRate = gstRate / 2;
+//     const cgstAmount = round(totalAmount * (cgstRate / 100));
+//     const sgstAmount = round(totalAmount * (sgstRate / 100));
+//     return {
+//       priceAfterDiscount,
+//       totalAmount,
+//       gstAmount: cgstAmount + sgstAmount,
+//       cgstAmount,
+//       sgstAmount,
+//       igstAmount: 0,
+//     };
+//   }
+
+//   if (item.taxOption === "IGST") {
+//     const igstRate = parseFloat(item.igstRate || item.gstRate || 0);
+//     const igstAmount = round(totalAmount * (igstRate / 100));
+//     return {
+//       priceAfterDiscount,
+//       totalAmount,
+//       gstAmount: 0,
+//       cgstAmount: 0,
+//       sgstAmount: 0,
+//       igstAmount,
+//     };
+//   }
+
+//   return {
+//     priceAfterDiscount,
+//     totalAmount,
+//     gstAmount: 0,
+//     cgstAmount: 0,
+//     sgstAmount: 0,
+//     igstAmount: 0,
+//   };
+// };
+
+
+
+
+
 const computeItemValues = (item) => {
-  const quantity = parseFloat(item.quantity);
-  const unitPrice = parseFloat(item.unitPrice);
-  const discount = parseFloat(item.discount);
-  const freight = parseFloat(item.freight);
+  const quantity = parseFloat(item.quantity) || 0;
+  const unitPrice = parseFloat(item.unitPrice) || 0;
+  const discount = parseFloat(item.discount) || 0;
+  const freight = parseFloat(item.freight) || 0;
+
+  // Price after discount per unit
   const priceAfterDiscount = round(unitPrice - discount);
+
+  // Total before tax (including freight if item-level)
   const totalAmount = round(quantity * priceAfterDiscount + freight);
 
   if (item.taxOption === "GST") {
-    const gstRate = parseFloat(item.gstRate);
+    const gstRate = parseFloat(item.gstRate) || 0;
     const cgstRate = gstRate / 2;
     const sgstRate = gstRate / 2;
+
     const cgstAmount = round(totalAmount * (cgstRate / 100));
     const sgstAmount = round(totalAmount * (sgstRate / 100));
+
     return {
       priceAfterDiscount,
       totalAmount,
@@ -34,8 +91,9 @@ const computeItemValues = (item) => {
   }
 
   if (item.taxOption === "IGST") {
-    const igstRate = parseFloat(item.igstRate || item.gstRate || 0);
+    const igstRate = parseFloat(item.igstRate) || 0;
     const igstAmount = round(totalAmount * (igstRate / 100));
+
     return {
       priceAfterDiscount,
       totalAmount,
@@ -46,6 +104,7 @@ const computeItemValues = (item) => {
     };
   }
 
+  // No tax
   return {
     priceAfterDiscount,
     totalAmount,
@@ -66,7 +125,7 @@ const ItemSection = ({ items, onItemChange, onAddItem, onRemoveItem }) => {
   };
 
   const globalTaxOption =
-    items && items.length > 0 ? items[0].taxOption || "GST" : "GST";
+    items && items.length > 0 ? items[0].taxOption || "GST" : "IGST";
 
   const handleFieldChange = (index, field, value) => {
     const newValue = isNaN(parseFloat(value)) ? 0 : parseFloat(value);
@@ -115,6 +174,9 @@ const ItemSection = ({ items, onItemChange, onAddItem, onRemoveItem }) => {
             <th className="border p-2">Item Code</th>
             <th className="border p-2">Item Name</th>
             <th className="border p-2">Description</th>
+            <th className="border p-2">Size (MM)</th>
+            <th className="border p-2">Length (MTR)</th>
+            <th className="border p-2">No.Of Roll/She etc </th>
             <th className="border p-2">Qty</th>
             <th className="border p-2">Unit Price</th>
             <th className="border p-2">Discount</th>
@@ -166,6 +228,30 @@ const ItemSection = ({ items, onItemChange, onAddItem, onRemoveItem }) => {
                     type="text"
                     value={item.itemDescription || ""}
                     onChange={(e) => onItemChange(index, { target: { name: "itemDescription", value: e.target.value } })}
+                    className="w-full border rounded p-1"
+                  />
+                </td>
+                  <td className="border p-1">
+                  <input
+                    type="number"
+                    value={item.size || ""}
+                    onChange={(e) => handleFieldChange(index, "size", e.target.value)}
+                    className="w-full border rounded p-1"
+                  />
+                </td>
+                  <td className="border p-1">
+                  <input
+                    type="number"
+                    value={item.length || ""}
+                    onChange={(e) => handleFieldChange(index, "length", e.target.value)}
+                    className="w-full border rounded p-1"
+                  />
+                </td>
+                  <td className="border p-1">
+                  <input
+                    type="number"
+                    value={item.noOfRolls || ""}
+                    onChange={(e) => handleFieldChange(index, "noOfRolls", e.target.value)}
                     className="w-full border rounded p-1"
                   />
                 </td>

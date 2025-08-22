@@ -32,6 +32,7 @@ export default function InvoiceDetail() {
     if (id) fetchOrder();
   }, [id]);
 
+
   const formatCurrency = (value) =>
     new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -180,6 +181,9 @@ export default function InvoiceDetail() {
                   <th className="border p-2 text-left">Item Code</th>
                   <th className="border p-2 text-left">Item Name</th>
                   <th className="border p-2 text-left">Description</th>
+                  <th className='border p-2 text-left'>Size</th>
+                  <th className='border p-2 text-left'>Length</th>
+                  <th className='border p-2 text-left'>No. of Rolls</th>
                   <th className="border p-2 text-center">Qty</th>
                   <th className="border p-2 text-center">Unit Price</th>
                   <th className="border p-2 text-center">Discount</th>
@@ -193,6 +197,9 @@ export default function InvoiceDetail() {
                     <td className="border p-2">{item.itemCode}</td>
                     <td className="border p-2">{item.itemName}</td>
                     <td className="border p-2">{item.itemDescription}</td>
+                    <td className='border p-2'>{item.size} </td>
+                    <td className='border p-2'>{item.length} </td>
+                    <td className='border p-2'>{item.noOfRolls} </td>
                     <td className="border p-2 text-center">
                       <div className="flex flex-col">
                         <span>Ordered: {item.quantity}</span>

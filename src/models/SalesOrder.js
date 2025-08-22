@@ -23,12 +23,16 @@ const ItemSchema = new mongoose.Schema({
   itemCode: { type: String },
   itemName: { type: String },
   itemDescription: { type: String },
+  size: { type: Number }, // e.g., "1000mm x 1200mm"
+  length: { type: Number }, // e.g., 1000 (in mm)
+  noOfRolls: { type: Number }, // e.g., 10
   quantity: { type: Number },
   orderedQuantity: { type: Number },
   unitPrice: { type: Number },
   discount: { type: Number },
   freight: { type: Number },
   gstRate: { type: Number },
+  igstRate: { type: Number },
   taxOption: { type: String, enum: ["GST", "IGST"], default: "GST" },
   priceAfterDiscount: { type: Number },
   totalAmount: { type: Number },

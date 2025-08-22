@@ -50,8 +50,8 @@ export async function GET(req, { params }) {
   }
 
   // If params contains an id, fetch a single supplier
-  if (params && params.id) {
-    const { id } = params;
+  if  (params && params.id) {
+    const { id } =  params;
     try {
       await dbConnect();
       const customers = await Customer.findById(id);
