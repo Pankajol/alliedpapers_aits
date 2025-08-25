@@ -67,7 +67,8 @@ const computeItemValues = (item) => {
   const freight = parseFloat(item.freight) || 0;
 
   // Price after discount per unit
-  const priceAfterDiscount = round(unitPrice - discount);
+  const priceAfterDiscount = round(unitPrice * (1 - discount / 100));
+
 
   // Total before tax (including freight if item-level)
   const totalAmount = round(quantity * priceAfterDiscount + freight);
@@ -179,7 +180,7 @@ const ItemSection = ({ items, onItemChange, onAddItem, onRemoveItem }) => {
             <th className="border p-2">No.Of Roll/She etc </th>
             <th className="border p-2">Qty</th>
             <th className="border p-2">Unit Price</th>
-            <th className="border p-2">Discount</th>
+            <th className="border p-2">Discount(%)</th>
             <th className="border p-2">Price</th>
             {/* <th className="border p-2">Freight</th> */}
             <th className="border p-2">Total</th>

@@ -95,7 +95,7 @@ const computeItemValues = (item) => {
   const price = parseFloat(item.unitPrice) || 0;
   const disc = parseFloat(item.discount) || 0;
   const fr = parseFloat(item.freight) || 0;
-  const pad = round(price - disc);
+  const pad = round(price *(1 - disc /100));
   const total = round(qty * pad + fr);
 
   if (item.taxOption === "GST") {
@@ -237,14 +237,27 @@ function SalesOrderForm() {
   
 
   // ---- Totals calculation ----
+  // useEffect(() => {
+  //   const items = formData.items || [];
+  //   const totalBefore = items.reduce((s, i) => {
+  //     const up = parseFloat(i.unitPrice) || 0;
+  //     const qty = parseFloat(i.quantity) || 0;
+  //     const disc = parseFloat(i.discount) || 0;
+  //     return s + (up * qty - disc);
+  //   }, 0);
+
+
   useEffect(() => {
-    const items = formData.items || [];
-    const totalBefore = items.reduce((s, i) => {
-      const up = parseFloat(i.unitPrice) || 0;
-      const qty = parseFloat(i.quantity) || 0;
-      const disc = parseFloat(i.discount) || 0;
-      return s + (up * qty - disc);
-    }, 0);
+  const items = formData.items || [];
+  const totalBefore = items.reduce((s, i) => {
+    const up = parseFloat(i.unitPrice) || 0;
+    const qty = parseFloat(i.quantity) || 0;
+    const disc = parseFloat(i.discount) || 0; // percent
+
+    const lineTotal = up * qty;
+    const discountAmt = (lineTotal * disc) / 100;
+    return s + (lineTotal - discountAmt);
+  }, 0);
 
     const gstTotal = items.reduce((s, i) => s + (parseFloat(i.gstAmount) || 0), 0);
     const igstTotal = items.reduce((s, i) => s + (parseFloat(i.igstAmount) || 0), 0);
@@ -783,7 +796,7 @@ function SalesOrderForm() {
       {/* ---------- Totals ---------- */}
       <div className="grid grid-cols-1 md-grid-cols-2 md:grid-cols-2 gap-4 mt-6">
         {[
-          ["Total Before Discount", "totalBeforeDiscount", true],
+          ["Total ", "totalBeforeDiscount", true],
           ["GST Total", "gstTotal", true],
           ["IGST Total", "igstTotal", true],
           ["Freight", "freight", false],
