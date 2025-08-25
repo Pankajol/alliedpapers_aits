@@ -79,7 +79,7 @@ export default function InvoiceDetail() {
             <div className="space-y-2">
               <p><strong>Customer Code:</strong> {order.customerCode}</p>
               <p><strong>Customer Name:</strong> {order.customerName}</p>
-              <p><strong>Contact Person:</strong> {order.contactPerson}</p>
+              {/* <p><strong>Contact Person:</strong> {order.contactPerson}</p> */}
               {/* <p><strong>Sales Employee:</strong> {order.salesEmployee || '-'}</p> */}
             </div>
           </div>
@@ -202,7 +202,7 @@ export default function InvoiceDetail() {
                     <td className='border p-2'>{item.noOfRolls} </td>
                     <td className="border p-2 text-center">
                       <div className="flex flex-col">
-                        <span>Ordered: {item.quantity}</span>
+                        <span>{item.quantity}</span>
                         {item.allowedQuantity > 0 && (
                           <span className="text-sm text-green-600">Allowed: {item.allowedQuantity}</span>
                         )}
@@ -214,10 +214,22 @@ export default function InvoiceDetail() {
                     <td className="border p-2 text-right">{formatCurrency(item.unitPrice)}</td>
                     <td className="border p-2 text-right">{formatCurrency(item.discount)}</td>
                     <td className="border p-2 text-center">
-                      <div className="flex flex-col">
-                        <span>{item.taxOption}: {item.gstRate}%</span>
-                        <span className="text-xs">{formatCurrency(item.gstAmount)}</span>
-                      </div>
+                   <div className="flex flex-col">
+  {item.taxOption === "GST" ? (
+    <>
+      <span>CGST: {item.gstRate / 2}%</span>
+      <span className="text-xs">{formatCurrency(item.cgstAmount)}</span>
+      <span>SGST: {item.gstRate / 2}%</span>
+      <span className="text-xs">{formatCurrency(item.sgstAmount)}</span>
+    </>
+  ) : (
+    <>
+      <span>IGST: {item.igstRate}%</span>
+      <span className="text-xs">{formatCurrency(item.igstAmount)}</span>
+    </>
+  )}
+</div>
+
                     </td>
                     <td className="border p-2 text-right font-medium">{formatCurrency(item.totalAmount)}</td>
                   </tr>

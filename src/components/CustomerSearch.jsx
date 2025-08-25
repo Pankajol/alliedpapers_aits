@@ -325,6 +325,7 @@ const CustomerSearch = ({ onSelectCustomer, onNotFound }) => {
       customerCode: customer.customerCode || "",
       customerName: customer.customerName || "",
       contactPerson: customer.contactPersonName || "",
+      phoneNumber: customer.mobileNumber || "",
       address1: customer.address1 || "",
       address2: customer.address2 || "",
       city: customer.city || "",

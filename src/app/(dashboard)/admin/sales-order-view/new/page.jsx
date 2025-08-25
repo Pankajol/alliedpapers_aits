@@ -33,6 +33,7 @@ const initialOrderState = {
   customerName: "",
   contactPerson: "",
   refNumber: "",
+  phoneNumber: "",
   salesEmployee: "",
   status: "Open",
   statusStages: "ETD Pending",
@@ -287,7 +288,9 @@ function SalesOrderForm() {
       customer: c._id,
       customerName: c.customerName,
       customerCode: c.customerCode,
-      contactPerson: c.contactPersonName,
+      contactPerson: c.contactPerson,
+      phoneNumber: c.phoneNumber || "",
+
       // reset addresses for a new customer
       billingAddress: { ...emptyAddress },
       shippingAddress: { ...emptyAddress },
@@ -430,6 +433,8 @@ function SalesOrderForm() {
       }));
   }, [editId]);
 
+  console.log("form data",{ formData });
+
   // ---- Render helpers ----
   if (loading) return <div>Loading…</div>;
   if (error) return <div className="text-red-600">{error}</div>;
@@ -508,7 +513,7 @@ function SalesOrderForm() {
           <label className="font-medium">Contact Person</label>
           <input
             name="contactPerson"
-            value={formData.contactPerson}
+            value={formData?.contactPerson}
             onChange={handleChange}
             readOnly={isReadOnly}
             className={isReadOnly ? ro : base}
@@ -516,11 +521,21 @@ function SalesOrderForm() {
         </div>
 
         {/* Reference No. */}
-        <div>
+        {/* <div>
           <label className="font-medium">Reference No.</label>
           <input
             name="refNumber"
             value={formData.refNumber}
+            onChange={handleChange}
+            readOnly={isReadOnly}
+            className={isReadOnly ? ro : base}
+          />
+        </div> */}
+           <div>
+          <label className="font-medium">Phone No.</label>
+          <input
+            name="phoneNumber"
+            value={formData.phoneNumber}
             onChange={handleChange}
             readOnly={isReadOnly}
             className={isReadOnly ? ro : base}
