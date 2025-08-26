@@ -62,6 +62,55 @@ export async function POST(req) {
     if (!user || !isAuthorized(user)) {
       return NextResponse.json({ success: false, message: "Forbidden" }, { status: 401 });
     }
+    //   here i try to for created by and company id and user
+    // const { fields, files } = await parseMultipart(req);
+    // const orderData = JSON.parse(fields.orderData || "{}");
+
+    // // 🧹 Clean up Mongo IDs
+    // delete orderData._id;
+    // orderData.items?.forEach((item) => delete item._id);
+    // delete orderData.billingAddress?._id;
+    // delete orderData.shippingAddress?._id;
+
+    // // 📌 Add metadata
+    // orderData.companyId = user.companyId;
+    // if (user.type === "user") {
+    //   orderData.createdBy = user.id;
+    // }
+
+    // const fileArray = Array.isArray(files.newFiles)
+    //   ? files.newFiles
+    //   : files.newFiles
+    //   ? [files.newFiles]
+    //   : [];
+
+    // ✅ Required attachments check
+    // if (fileArray.length === 0) {
+    //   return NextResponse.json(
+    //     { success: false, message: "At least one attachment is required." },
+    //     { status: 400 }
+    //   );
+    // }
+
+    // ☁️ Upload to Cloudinary
+    // orderData.attachments = await Promise.all(
+    //   fileArray.map(async (file) => {
+    //     const result = await cloudinary.uploader.upload(file.filepath, {
+    //       folder: 'sales_orders',
+    //       resource_type: 'auto',
+    //     });
+
+    //     return {
+    //       fileName: file.originalFilename,
+    //       fileUrl: result.secure_url,
+    //       fileType: file.mimetype,
+    //       uploadedAt: new Date(),
+    //     };
+    //   })
+    // );
+
+    // // 🧾 Create sales order
+    // const order = await SalesOrder.create(orderData);
 
     const { fields, files } = await parseMultipart(req);
     const orderData = JSON.parse(fields.orderData || "{}");
@@ -74,25 +123,16 @@ export async function POST(req) {
 
     // 📌 Add metadata
     orderData.companyId = user.companyId;
-    if (user.type === "user") {
-      orderData.createdBy = user.id;
-    }
+    orderData.createdBy = user.id || user._id; // set createdBy to logged-in user
+    orderData.createdAt = new Date();
 
+    // ☁️ Upload attachments to Cloudinary
     const fileArray = Array.isArray(files.newFiles)
       ? files.newFiles
       : files.newFiles
-      ? [files.newFiles]
-      : [];
+        ? [files.newFiles]
+        : [];
 
-    // ✅ Required attachments check
-    // if (fileArray.length === 0) {
-    //   return NextResponse.json(
-    //     { success: false, message: "At least one attachment is required." },
-    //     { status: 400 }
-    //   );
-    // }
-
-    // ☁️ Upload to Cloudinary
     orderData.attachments = await Promise.all(
       fileArray.map(async (file) => {
         const result = await cloudinary.uploader.upload(file.filepath, {
@@ -112,7 +152,13 @@ export async function POST(req) {
     // 🧾 Create sales order
     const order = await SalesOrder.create(orderData);
 
-      await sendSalesOrderEmail(
+
+
+
+
+
+
+    await sendSalesOrderEmail(
       [
         "gaurav@alliedpapers.com",
         "vaishali@aitsind.com"
@@ -159,7 +205,7 @@ export async function GET(req) {
 
 
 
-/// local system 
+/// local system
 
 // import { NextResponse } from 'next/server';
 // import mongoose from 'mongoose';
@@ -237,16 +283,16 @@ export async function GET(req) {
 //     // 7. Create sales order in DB
 //     const order = await SalesOrder.create(orderData);
 
-   // // 8. Send email
-    // await sendSalesOrderEmail(
-    //   [
-    //     "aniketgaikwad7224@gmail.com",
-    //     "9to5withnikhil@gmail.com",
-    //     "cp5553135@gmail.com",
-    //     "pritammore1001@gmail.com"
-    //   ],
-    //   order
-    // );
+// // 8. Send email
+// await sendSalesOrderEmail(
+//   [
+//     "aniketgaikwad7224@gmail.com",
+//     "9to5withnikhil@gmail.com",
+//     "cp5553135@gmail.com",
+//     "pritammore1001@gmail.com"
+//   ],
+//   order
+// );
 
 //     // 9. Return response
 //     return NextResponse.json(
