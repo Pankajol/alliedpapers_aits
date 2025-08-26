@@ -9,52 +9,7 @@ const round = (num, decimals = 2) => {
   return Number(n.toFixed(decimals));
 };
 
-// const computeItemValues = (item) => {
-//   const quantity = parseFloat(item.quantity);
-//   const unitPrice = parseFloat(item.unitPrice);
-//   const discount = parseFloat(item.discount);
-//   const freight = parseFloat(item.freight);
-//   const priceAfterDiscount = round(unitPrice - discount);
-//   const totalAmount = round(quantity * priceAfterDiscount + freight);
 
-//   if (item.taxOption === "GST") {
-//     const gstRate = parseFloat(item.gstRate);
-//     const cgstRate = gstRate / 2;
-//     const sgstRate = gstRate / 2;
-//     const cgstAmount = round(totalAmount * (cgstRate / 100));
-//     const sgstAmount = round(totalAmount * (sgstRate / 100));
-//     return {
-//       priceAfterDiscount,
-//       totalAmount,
-//       gstAmount: cgstAmount + sgstAmount,
-//       cgstAmount,
-//       sgstAmount,
-//       igstAmount: 0,
-//     };
-//   }
-
-//   if (item.taxOption === "IGST") {
-//     const igstRate = parseFloat(item.igstRate || item.gstRate || 0);
-//     const igstAmount = round(totalAmount * (igstRate / 100));
-//     return {
-//       priceAfterDiscount,
-//       totalAmount,
-//       gstAmount: 0,
-//       cgstAmount: 0,
-//       sgstAmount: 0,
-//       igstAmount,
-//     };
-//   }
-
-//   return {
-//     priceAfterDiscount,
-//     totalAmount,
-//     gstAmount: 0,
-//     cgstAmount: 0,
-//     sgstAmount: 0,
-//     igstAmount: 0,
-//   };
-// };
 
 
 
@@ -125,34 +80,70 @@ const ItemSection = ({ items, onItemChange, onAddItem, onRemoveItem }) => {
     onRemoveItem: PropTypes.func.isRequired,
   };
 
+
+  
+
   const globalTaxOption =
     items && items.length > 0 ? items[0].taxOption || "GST" : "IGST";
 
+  // const handleFieldChange = (index, field, value) => {
+  //   const newValue = isNaN(parseFloat(value)) ? 0 : parseFloat(value);
+  //   const currentItem = items[index] || {};
+  //   const updatedItem = { ...currentItem, [field]: newValue };
+  //   const computed = computeItemValues(updatedItem);
+  //   onItemChange(index, { target: { name: field, value: newValue } });
+  //   onItemChange(index, {
+  //     target: { name: "priceAfterDiscount", value: computed.priceAfterDiscount },
+  //   });
+  //   onItemChange(index, {
+  //     target: { name: "totalAmount", value: computed.totalAmount },
+  //   });
+  //   onItemChange(index, {
+  //     target: { name: "gstAmount", value: computed.gstAmount },
+  //   });
+  //   onItemChange(index, {
+  //     target: { name: "cgstAmount", value: computed.cgstAmount },
+  //   });
+  //   onItemChange(index, {
+  //     target: { name: "sgstAmount", value: computed.sgstAmount },
+  //   });
+  //   onItemChange(index, {
+  //     target: { name: "igstAmount", value: computed.igstAmount },
+  //   });
+  // };
+
+
+
+
   const handleFieldChange = (index, field, value) => {
-    const newValue = isNaN(parseFloat(value)) ? 0 : parseFloat(value);
-    const currentItem = items[index] || {};
-    const updatedItem = { ...currentItem, [field]: newValue };
-    const computed = computeItemValues(updatedItem);
-    onItemChange(index, { target: { name: field, value: newValue } });
-    onItemChange(index, {
-      target: { name: "priceAfterDiscount", value: computed.priceAfterDiscount },
-    });
-    onItemChange(index, {
-      target: { name: "totalAmount", value: computed.totalAmount },
-    });
-    onItemChange(index, {
-      target: { name: "gstAmount", value: computed.gstAmount },
-    });
-    onItemChange(index, {
-      target: { name: "cgstAmount", value: computed.cgstAmount },
-    });
-    onItemChange(index, {
-      target: { name: "sgstAmount", value: computed.sgstAmount },
-    });
-    onItemChange(index, {
-      target: { name: "igstAmount", value: computed.igstAmount },
-    });
-  };
+  const newValue = isNaN(parseFloat(value)) ? 0 : parseFloat(value);
+  const currentItem = items[index] || {};
+  const updatedItem = { ...currentItem, [field]: newValue };
+
+  // 👉 auto compute quantity when size/length/noOfRolls changes
+  const size = parseFloat(updatedItem.size) || 0;
+  const length = parseFloat(updatedItem.length) || 0;
+  const rolls = parseFloat(updatedItem.noOfRolls) || 0;
+  const computedQty = (size / 1000) * length * rolls;
+
+  // overwrite quantity (rounded to 2 decimals to keep it neat)
+  updatedItem.quantity = Number.isFinite(computedQty)
+    ? parseFloat(computedQty.toFixed(2))
+    : 0;
+
+  // recompute other values (you already have this helper)
+  const computed = computeItemValues(updatedItem);
+
+  // 🔽 dispatch all changes back up
+  onItemChange(index, { target: { name: field, value: newValue } });
+  onItemChange(index, { target: { name: "quantity", value: updatedItem.quantity } });
+  onItemChange(index, { target: { name: "priceAfterDiscount", value: computed.priceAfterDiscount } });
+  onItemChange(index, { target: { name: "totalAmount", value: computed.totalAmount } });
+  onItemChange(index, { target: { name: "gstAmount", value: computed.gstAmount } });
+  onItemChange(index, { target: { name: "cgstAmount", value: computed.cgstAmount } });
+  onItemChange(index, { target: { name: "sgstAmount", value: computed.sgstAmount } });
+  onItemChange(index, { target: { name: "igstAmount", value: computed.igstAmount } });
+};
 
   const handleTaxOptionChange = (index, value) => {
     onItemChange(index, { target: { name: "taxOption", value } });

@@ -251,7 +251,7 @@ const customerSchema = new mongoose.Schema({
   glAccount: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "BankHead",
-    required: [true, "GL BankHead is required"]
+    // required: [true, "GL BankHead is required"]
   }
 }, {
   timestamps: true,
