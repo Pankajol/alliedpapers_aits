@@ -13,51 +13,44 @@ export async function POST(req) {
       );
     }
 
-    // Transform flat CSV data → Mongo nested schema
     const formattedCustomers = customers.map((c) => ({
       customerCode: c.customerCode,
       customerName: c.customerName,
       customerGroup: c.customerGroup,
       customerType: c.customerType,
       emailId: c.emailId,
-      fromLead: c.fromLead,
       mobileNumber: c.mobileNumber,
-      fromOpportunity: c.fromOpportunity,
-
-      // ✅ wrap billing into array
       billingAddresses: [
         {
-          address1: c["billingAddress.address1"] || "",
-          address2: c["billingAddress.address2"] || "",
-          city: c["billingAddress.city"] || "",
-          state: c["billingAddress.state"] || "",
-          zip: c["billingAddress.zip"] || "",
-          country: c["billingAddress.country"] || "",
+          address1: c.billingAddress?.address1 || "",
+          address2: c.billingAddress?.address2 || "",
+          city: c.billingAddress?.city || "",
+          state: c.billingAddress?.state || "",
+          zip: c.billingAddress?.zip || "",
+          country: c.billingAddress?.country || "",
         },
       ],
-
-      // ✅ wrap shipping into array
       shippingAddresses: [
         {
-          address1: c["shippingAddress.address1"] || "",
-          address2: c["shippingAddress.address2"] || "",
-          city: c["shippingAddress.city"] || "",
-          state: c["shippingAddress.state"] || "",
-          zip: c["shippingAddress.zip"] || "",
-          country: c["shippingAddress.country"] || "",
+          address1: c.shippingAddress?.address1 || "",
+          address2: c.shippingAddress?.address2 || "",
+          city: c.shippingAddress?.city || "",
+          state: c.shippingAddress?.state || "",
+          zip: c.shippingAddress?.zip || "",
+          country: c.shippingAddress?.country || "",
         },
       ],
-
       paymentTerms: c.paymentTerms,
       gstNumber: c.gstNumber,
       gstCategory: c.gstCategory,
       pan: c.pan,
       contactPersonName: c.contactPersonName,
-      commissionRate: c.commissionRate,
+      commissionRate: parseFloat(c.commissionRate) || 0,
       glAccount: c.glAccount,
+      salesEmployee: c.salesEmployee || "",
+      zone: c.zone || "",
     }));
 
-    // Bulk insert using insertMany
     const result = await Customer.insertMany(formattedCustomers, { ordered: false });
 
     return new Response(
@@ -69,13 +62,96 @@ export async function POST(req) {
     );
   } catch (error) {
     console.error("Bulk upload error:", error);
-
     return new Response(
       JSON.stringify({ message: error.message }),
       { status: 500 }
     );
   }
 }
+
+
+
+
+
+// import Customer from "@/models/CustomerModel";
+// import dbConnect from "@/lib/db";
+
+// export async function POST(req) {
+//   try {
+//     await dbConnect();
+//     const { customers } = await req.json();
+
+//     if (!customers || !Array.isArray(customers)) {
+//       return new Response(
+//         JSON.stringify({ message: "Invalid data format" }),
+//         { status: 400 }
+//       );
+//     }
+
+//     // Transform flat CSV data → Mongo nested schema
+//     const formattedCustomers = customers.map((c) => ({
+//       customerCode: c.customerCode,
+//       customerName: c.customerName,
+//       customerGroup: c.customerGroup,
+//       customerType: c.customerType,
+//       emailId: c.emailId,
+//       fromLead: c.fromLead,
+//       mobileNumber: c.mobileNumber,
+//       fromOpportunity: c.fromOpportunity,
+
+//       // ✅ wrap billing into array
+//       billingAddresses: [
+//         {
+//           address1: c["billingAddress.address1"] || "",
+//           address2: c["billingAddress.address2"] || "",
+//           city: c["billingAddress.city"] || "",
+//           state: c["billingAddress.state"] || "",
+//           zip: c["billingAddress.zip"] || "",
+//           country: c["billingAddress.country"] || "",
+//         },
+//       ],
+
+//       // ✅ wrap shipping into array
+//       shippingAddresses: [
+//         {
+//           address1: c["shippingAddress.address1"] || "",
+//           address2: c["shippingAddress.address2"] || "",
+//           city: c["shippingAddress.city"] || "",
+//           state: c["shippingAddress.state"] || "",
+//           zip: c["shippingAddress.zip"] || "",
+//           country: c["shippingAddress.country"] || "",
+//         },
+//       ],
+
+//       paymentTerms: c.paymentTerms,
+//       gstNumber: c.gstNumber,
+//       gstNumber: c.gstNumber,
+//       gstCategory: c.gstCategory,
+//       pan: c.pan,
+//       contactPersonName: c.contactPersonName,
+//       commissionRate: c.commissionRate,
+//       glAccount: c.glAccount,
+//     }));
+
+//     // Bulk insert using insertMany
+//     const result = await Customer.insertMany(formattedCustomers, { ordered: false });
+
+//     return new Response(
+//       JSON.stringify({
+//         message: "Customers inserted successfully",
+//         insertedCount: result.length,
+//       }),
+//       { status: 200 }
+//     );
+//   } catch (error) {
+//     console.error("Bulk upload error:", error);
+
+//     return new Response(
+//       JSON.stringify({ message: error.message }),
+//       { status: 500 }
+//     );
+//   }
+// }
 
 
 

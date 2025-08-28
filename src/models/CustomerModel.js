@@ -181,7 +181,7 @@ const addressSchema = new mongoose.Schema({
 const customerSchema = new mongoose.Schema({
   customerCode: {
     type: String,
-    unique: true,
+
     trim: true,
     uppercase: true
   },
@@ -192,14 +192,14 @@ const customerSchema = new mongoose.Schema({
   },
   customerGroup: {
     type: String,
-    required: [true, "Customer group is required"],
-    trim: true
+    // required: [true, "Customer group is required"],
+    // trim: true
   },
   customerType: {
     type: String,
-    required: [true, "Customer type is required"],
-    enum: ['Individual', 'Business', 'Government'],
-    default: 'Individual'
+    // required: [true, "Customer type is required"],
+    // enum: ['Individual', 'Business', 'Government'],
+    // default: 'Individual'
   },
   emailId: {
     type: String,
@@ -225,19 +225,19 @@ const customerSchema = new mongoose.Schema({
   },
   gstCategory: {
     type: String,
-    trim: true,
-    enum:[
-    "Registered Regular",
-    "Registered Composition",
-    "Unregistered",
-    "SEZ",
-    "Overseas",
-    "Deemed Export",
-    "UIN Holders",
-    "Tax Deductor",
-    "Tax Collector",
-    "Input Service Distributor"
-  ]
+    // trim: true,
+  //   enum:[
+  //   "Registered Regular",
+  //   "Registered Composition",
+  //   "Unregistered",
+  //   "SEZ",
+  //   "Overseas",
+  //   "Deemed Export",
+  //   "UIN Holders",
+  //   "Tax Deductor",
+  //   "Tax Collector",
+  //   "Input Service Distributor"
+  // ]
   },
   pan: {
     type: String,
@@ -252,7 +252,9 @@ const customerSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "BankHead",
     // required: [true, "GL BankHead is required"]
-  }
+  },
+  salesEmployee: { type: String }, // from "SALES PERON NAME"
+  zone: { type: String },          // from "REGION"
 }, {
   timestamps: true,
   collection: "customers"

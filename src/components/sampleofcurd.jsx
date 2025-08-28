@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Papa from "papaparse";
+
 import { FaEdit, FaTrash, FaPlus, FaSearch, FaMinus } from "react-icons/fa";
 import CountryStateSearch from "@/components/CountryStateSearch";
 import GroupSearch from "@/components/groupmaster";
@@ -222,15 +223,17 @@ export default function CustomerManagement() {
   // };
 
 
-  const handleFileUpload = async (event) => {
+
+
+const handleFileUpload = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
   Papa.parse(file, {
-    header: true, // first row = headers
+    header: true,
     skipEmptyLines: true,
     complete: async (results) => {
-      const rows = results.data; // Array of objects
+      const rows = results.data;
       console.log("Parsed rows:", rows);
 
       try {
@@ -241,8 +244,16 @@ export default function CustomerManagement() {
         });
 
         const data = await res.json();
+        console.log("Response data:", data);
+
         if (res.ok) {
-          alert(`✅ Successfully inserted ${data.insertedCount} customers`);
+          const totalRows = rows.length;
+          const inserted = data.insertedCount || 0;
+          const skipped = totalRows - inserted;
+
+          alert(
+            `📊 Total rows: ${totalRows}\n✅ Inserted: ${inserted}\n⚠️ Skipped (duplicates): ${skipped}`
+          );
         } else {
           alert(`❌ Error: ${data.message}`);
         }
@@ -253,6 +264,9 @@ export default function CustomerManagement() {
     },
   });
 };
+
+
+
 
 
   const handleDelete = async (id) => {
