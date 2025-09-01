@@ -1,69 +1,127 @@
+// /api/customers/customer-template/route.js
+import { NextResponse } from "next/server";
+import connectDB from "@/lib/db";
 import Customer from "@/models/CustomerModel";
-import dbConnect from "@/lib/db";
+
+
+
+// // /api/customers/customer-template/route.js
+// import { NextResponse } from "next/server";
+// import connectDB from "@/lib/db";
+// import Customer from "@/models/CustomerModel";
 
 export async function POST(req) {
   try {
-    await dbConnect();
-    const { customers } = await req.json();
+    await connectDB();
 
-    if (!customers || !Array.isArray(customers)) {
-      return new Response(
-        JSON.stringify({ message: "Invalid data format" }),
+    const body = await req.json();
+    const customers = body.customers || [];
+
+    if (!Array.isArray(customers) || customers.length === 0) {
+      return NextResponse.json(
+        { message: "No customer data received" },
         { status: 400 }
       );
     }
 
-    const formattedCustomers = customers.map((c) => ({
-      customerCode: c.customerCode,
-      customerName: c.customerName,
-      customerGroup: c.customerGroup,
-      customerType: c.customerType,
-      emailId: c.emailId,
-      mobileNumber: c.mobileNumber,
-      billingAddresses: [
-        {
-          address1: c.billingAddress?.address1 || "",
-          address2: c.billingAddress?.address2 || "",
-          city: c.billingAddress?.city || "",
-          state: c.billingAddress?.state || "",
-          zip: c.billingAddress?.zip || "",
-          country: c.billingAddress?.country || "",
-        },
-      ],
-      shippingAddresses: [
-        {
-          address1: c.shippingAddress?.address1 || "",
-          address2: c.shippingAddress?.address2 || "",
-          city: c.shippingAddress?.city || "",
-          state: c.shippingAddress?.state || "",
-          zip: c.shippingAddress?.zip || "",
-          country: c.shippingAddress?.country || "",
-        },
-      ],
-      paymentTerms: c.paymentTerms,
-      gstNumber: c.gstNumber,
-      gstCategory: c.gstCategory,
-      pan: c.pan,
-      contactPersonName: c.contactPersonName,
-      commissionRate: parseFloat(c.commissionRate) || 0,
-      glAccount: c.glAccount,
-      salesEmployee: c.salesEmployee || "",
-      zone: c.zone || "",
-    }));
+    let inserted = [];
+    let updated = [];
+    let skipped = [];
+    let errors = [];
 
-    const result = await Customer.insertMany(formattedCustomers, { ordered: false });
+    for (const rawCust of customers) {
+      try {
+        // Map CSV fields → Schema
+        const cust = {
+          customerCode: rawCust.customerCode?.trim(),
+          customerName: rawCust.customerName?.trim(),
+          customerGroup: rawCust.customerGroup,
+          customerType: rawCust.customerType,
+          emailId: rawCust.emailId?.trim(),
+          fromLead: rawCust.fromLead,
+          mobileNumber: rawCust.mobileNumber
+            ? rawCust.mobileNumber.replace(/\D/g, "")
+            : undefined,
+          fromOpportunity: rawCust.fromOpportunity,
+          billingAddresses: [
+            {
+              address1: rawCust["billingAddress.address1"] || "",
+              address2: rawCust["billingAddress.address2"] || "",
+              city: rawCust["billingAddress.city"] || "",
+              state: rawCust["billingAddress.state"] || "",
+              zip: rawCust["billingAddress.zip"] || "",
+              country: rawCust["billingAddress.country"] || "",
+            },
+          ],
+          shippingAddresses: [
+            {
+              address1: rawCust["shippingAddress.address1"] || "",
+              address2: rawCust["shippingAddress.address2"] || "",
+              city: rawCust["shippingAddress.city"] || "",
+              state: rawCust["shippingAddress.state"] || "",
+              zip: rawCust["shippingAddress.zip"] || "",
+              country: rawCust["shippingAddress.country"] || "",
+            },
+          ],
+          paymentTerms: rawCust.paymentTerms,
+          gstNumber: rawCust["GST Number"]?.trim(),
+          gstCategory: rawCust.gstCategory,
+          pan: rawCust.pan ? rawCust.pan.trim().toUpperCase() : undefined,
+          contactPersonName: rawCust.contactPersonName,
+          commissionRate: rawCust.commissionRate,
+          glAccount: rawCust.glAccount,
+          salesEmployee: rawCust.salesEmployee,
+          zone: rawCust.zone,
+        };
 
-    return new Response(
-      JSON.stringify({
-        message: "Customers inserted successfully",
-        insertedCount: result.length,
-      }),
-      { status: 200 }
-    );
+        // Basic validation
+        if (!cust.customerCode || !cust.customerName) {
+          skipped.push({
+            customerCode: cust.customerCode,
+            reason: "Missing customerCode or customerName",
+          });
+          continue;
+        }
+
+        // Check if already exists by customerCode
+        const existing = await Customer.findOne({
+          customerCode: cust.customerCode,
+        });
+
+        if (existing) {
+          await Customer.updateOne(
+            { customerCode: cust.customerCode },
+            { $set: cust }
+          );
+          updated.push(cust.customerCode);
+        } else {
+          await Customer.create(cust);
+          inserted.push(cust.customerCode);
+        }
+      } catch (err) {
+        errors.push({
+          customerCode: rawCust.customerCode,
+          error: err.message,
+        });
+      }
+    }
+
+    return NextResponse.json({
+      message: "Customers processed",
+      totalReceived: customers.length,
+      insertedCount: inserted.length,
+      updatedCount: updated.length,
+      skippedCount: skipped.length,
+      errorCount: errors.length,
+      inserted,
+      updated,
+      skipped,
+      errors,
+    });
   } catch (error) {
-    console.error("Bulk upload error:", error);
-    return new Response(
-      JSON.stringify({ message: error.message }),
+    console.error("Error inserting customers:", error);
+    return NextResponse.json(
+      { message: "Error processing customers", error: error.message },
       { status: 500 }
     );
   }
@@ -73,125 +131,6 @@ export async function POST(req) {
 
 
 
-// import Customer from "@/models/CustomerModel";
-// import dbConnect from "@/lib/db";
-
-// export async function POST(req) {
-//   try {
-//     await dbConnect();
-//     const { customers } = await req.json();
-
-//     if (!customers || !Array.isArray(customers)) {
-//       return new Response(
-//         JSON.stringify({ message: "Invalid data format" }),
-//         { status: 400 }
-//       );
-//     }
-
-//     // Transform flat CSV data → Mongo nested schema
-//     const formattedCustomers = customers.map((c) => ({
-//       customerCode: c.customerCode,
-//       customerName: c.customerName,
-//       customerGroup: c.customerGroup,
-//       customerType: c.customerType,
-//       emailId: c.emailId,
-//       fromLead: c.fromLead,
-//       mobileNumber: c.mobileNumber,
-//       fromOpportunity: c.fromOpportunity,
-
-//       // ✅ wrap billing into array
-//       billingAddresses: [
-//         {
-//           address1: c["billingAddress.address1"] || "",
-//           address2: c["billingAddress.address2"] || "",
-//           city: c["billingAddress.city"] || "",
-//           state: c["billingAddress.state"] || "",
-//           zip: c["billingAddress.zip"] || "",
-//           country: c["billingAddress.country"] || "",
-//         },
-//       ],
-
-//       // ✅ wrap shipping into array
-//       shippingAddresses: [
-//         {
-//           address1: c["shippingAddress.address1"] || "",
-//           address2: c["shippingAddress.address2"] || "",
-//           city: c["shippingAddress.city"] || "",
-//           state: c["shippingAddress.state"] || "",
-//           zip: c["shippingAddress.zip"] || "",
-//           country: c["shippingAddress.country"] || "",
-//         },
-//       ],
-
-//       paymentTerms: c.paymentTerms,
-//       gstNumber: c.gstNumber,
-//       gstNumber: c.gstNumber,
-//       gstCategory: c.gstCategory,
-//       pan: c.pan,
-//       contactPersonName: c.contactPersonName,
-//       commissionRate: c.commissionRate,
-//       glAccount: c.glAccount,
-//     }));
-
-//     // Bulk insert using insertMany
-//     const result = await Customer.insertMany(formattedCustomers, { ordered: false });
-
-//     return new Response(
-//       JSON.stringify({
-//         message: "Customers inserted successfully",
-//         insertedCount: result.length,
-//       }),
-//       { status: 200 }
-//     );
-//   } catch (error) {
-//     console.error("Bulk upload error:", error);
-
-//     return new Response(
-//       JSON.stringify({ message: error.message }),
-//       { status: 500 }
-//     );
-//   }
-// }
-
-
-
-
-// import Customer from "@/models/CustomerModel"; // adjust path if needed
-
-
-// import dbConnect from "@/lib/db"; // <-- ensure you have a db connection helper
-
-// export async function POST(req) {
-//   try {
-//     await dbConnect();
-//     const { customers } = await req.json();
-
-//     if (!customers || !Array.isArray(customers)) {
-//       return new Response(
-//         JSON.stringify({ message: "Invalid data format" }),
-//         { status: 400 }
-//       );
-//     }
-
-//     // Bulk insert using insertMany
-//     const result = await Customer.insertMany(customers, { ordered: false });
-
-//     return new Response(
-//       JSON.stringify({
-//         message: "Customers inserted successfully",
-//         insertedCount: result.length,
-//       }),
-//       { status: 200 }
-//     );
-//   } catch (error) {
-//     console.error("Bulk upload error:", error);
-
-//     return new Response(
-//       JSON.stringify({ message: error.message }),
-//       { status: 500 }
-//     );
-//   }
-// }
 
 
 export async function GET() {
